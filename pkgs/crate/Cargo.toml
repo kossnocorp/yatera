@@ -1,11 +1,12 @@
 [package]
-name = "yateracli"
+name = "yatera"
 version = "0.1.0"
 edition = "2024"
 description = "Yet another Tera CLI"
 authors = ["Sasha Koss <koss@nocorp.me>"]
 license = "MIT"
-repository = "https://github.com/kossnocorp/yateracli"
+repository = "https://github.com/kossnocorp/yatera"
+website = "https://yatera.fyi"
 
 [[bin]]
 name = "tera"
