@@ -2,6 +2,7 @@
 import Layout from "#/ui/layouts/Layout.astro";
 import GitHubIcon from "#/assets/github-original.svg";
 import Code from "astro/components/Code.astro";
+import { lit } from "smollit";
 ---
 
 <Layout
@@ -17,9 +18,26 @@ import Code from "astro/components/Code.astro";
           <p class="subheadline">Yet Another Tera CLI</p>
         </header>
 
-        <p class="description">Renders Tera templates from the command line:</p>
+        <p class="description">
+          It supports Tera v2, and features <a href="#arguments">rich DX</a> and extra
+          built-in filters.
+        </p>
 
-        <Code code={`tera template.tera --var-name=value`} lang="bash" />
+        <Code
+          code={lit`
+            # Render a template with variables
+            cat template.tera | tera var1=value var2=value > output.txt
+
+            # Use structured data as variables (JSON, TOML, or YAML)
+            cat template.tera | tera --json '{"hello":"world"}' > output.txt
+            cat template.tera | tera --json-file vars.json > output.txt
+
+            # Read and write files directly (can be used individually)
+            tera --from template.tera --to output.txt --json-file vars.json
+          `}
+          lang="bash"
+          theme="css-variables"
+        />
 
         <nav class="links">
           <ul>
@@ -49,6 +67,148 @@ import Code from "astro/components/Code.astro";
             <pre><code>cargo binstall yatera</code></pre>
           </li>
         </ul>
+      </section>
+
+      <section class="section arguments">
+        <h2 id="arguments">Arguments</h2>
+
+        <p>
+          The following arguments are available (also see <code
+            >tera --help</code
+          >):
+        </p>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Argument</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>var1=value var2=value</code></td>
+              <td>Set template variables from the command line</td>
+            </tr>
+            <tr>
+              <td><code>{`--json '{"key":"value"}'`}</code></td>
+              <td>Set template variables from a JSON string</td>
+            </tr>
+            <tr>
+              <td><code>--json-file vars.json</code></td>
+              <td>Set template variables from a JSON file</td>
+            </tr>
+            <tr>
+              <td><code>--toml-file vars.toml</code></td>
+              <td>Set template variables from a TOML file </td>
+            </tr>
+            <tr>
+              <td><code>--toml "$(cat vars.toml)"</code></td>
+              <td>Set template variables from a TOML string</td>
+            </tr>
+            <tr>
+              <td><code>--yaml-file vars.yaml</code></td>
+              <td>Set template variables from a YAML file</td>
+            </tr>
+            <tr>
+              <td><code>--yaml "$(cat vars.yaml)"</code></td>
+              <td>Set template variables from a YAML string</td>
+            </tr>
+            <tr>
+              <td><code>--from template.tera</code></td>
+              <td>Read the template from a file instead of stdin</td>
+            </tr>
+            <tr>
+              <td><code>--to output.txt</code></td>
+              <td>Write the rendered result to a file instead of stdout</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section class="section arguments">
+        <h2 id="builtins">Built-Ins</h2>
+
+        <h3 id="heck">heck</h3>
+
+        <!--
+[heck](https://crates.io/crates/heck) methods are available as string filters:
+
+```bash
+printf '{{ name | to_snake_case }}' | tera name="Hello World"
+#=> hello_world
+```
+
+| Filter                                   | Result for `Hello World` |
+| ---------------------------------------- | ------------------------ |
+| `to_upper_camel_case` / `to_pascal_case` | `HelloWorld`             |
+| `to_lower_camel_case`                    | `helloWorld`             |
+| `to_snake_case`                          | `hello_world`            |
+| `to_kebab_case`                          | `hello-world`            |
+| `to_shouty_snake_case`                   | `HELLO_WORLD`            |
+| `to_shouty_kebab_case`                   | `HELLO-WORLD`            |
+| `to_title_case`                          | `Hello World`            |
+| `to_train_case`                          | `Hello-World`            |
+ -->
+
+        <p>
+          <a href="https://crates.io/crates/heck" class="link">heck</a> methods are
+          available as string filters:
+        </p>
+
+        <Code
+          code={lit`
+            printf '{{ name | to_snake_case }}' | tera name="Hello World"
+            #=> hello_world
+          `}
+          lang="bash"
+          theme="css-variables"
+        />
+
+        <table>
+          <thead>
+            <tr>
+              <th>Filter</th>
+              <th>Result for <code>Hello World</code></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+                <code>to_upper_camel_case</code> / <code>to_pascal_case</code>
+              </td>
+              <td><code>HelloWorld</code></td>
+            </tr>
+            <tr>
+              <td><code>to_lower_camel_case</code></td>
+              <td><code>helloWorld</code></td>
+            </tr>
+            <tr>
+              <td><code>to_snake_case</code></td>
+              <td><code>hello_world</code></td>
+            </tr>
+            <tr>
+              <td><code>to_kebab_case</code></td>
+              <td><code>hello-world</code></td>
+            </tr>
+            <tr>
+              <td><code>to_shouty_snake_case</code></td>
+              <td><code>HELLO_WORLD</code></td>
+            </tr>
+            <tr>
+              <td><code>to_shouty_kebab_case</code></td>
+              <td><code>HELLO-WORLD</code></td>
+            </tr>
+            <tr>
+              <td><code>to_title_case</code></td>
+              <td><code>Hello World</code></td>
+            </tr>
+            <tr>
+              <td><code>to_train_case</code></td>
+              <td><code>Hello-World</code></td>
+            </tr>
+          </tbody>
+        </table>
       </section>
     </main>
 
@@ -120,6 +280,22 @@ import Code from "astro/components/Code.astro";
 
       & pre {
         @apply border border-(--color-code-border) rounded-md px-2 py-1 w-full max-w-md overflow-x-auto font-mono bg-(--color-code-canvas) text-(--color-code-ink) text-sm;
+      }
+    }
+  }
+
+  .arguments,
+  .builtins {
+    & table {
+      @apply table-auto border-collapse;
+
+      & th {
+        @apply bg-(--color-table-header-canvas) font-bold text-left;
+      }
+
+      & th,
+      & td {
+        @apply border border-(--color-table-border) px-4 py-2;
       }
     }
   }

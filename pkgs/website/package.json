@@ -6,7 +6,8 @@
     "#/*": "./src/*"
   },
   "dependencies": {
-    "astro": "7.2.3"
+    "astro": "7.2.3",
+    "smollit": "^0.3.0"
   },
   "devDependencies": {
     "@astrojs/cloudflare": "14.2.1",

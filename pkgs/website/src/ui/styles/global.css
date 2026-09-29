@@ -15,9 +15,27 @@
   --color-link: theme(colors.cyan.900);
   --color-link-hover: theme(colors.cyan.700);
 
+  --color-table-border: theme(colors.neutral.300);
+  --color-table-header-canvas: theme(colors.neutral.100);
+
   --color-code-border: theme(colors.neutral.200);
-  --color-code-canvas: theme(colors.neutral.50);
+  --color-code-canvas: theme(colors.white);
   --color-code-ink: theme(colors.neutral.900);
+
+  /* Astro code */
+
+  /* Base */
+  --astro-code-background: var(--color-code-canvas);
+  --astro-code-foreground: var(--color-code-ink);
+
+  /* Tokens */
+  --astro-code-token-comment: #af6300;
+  --astro-code-token-keyword: #c100ae;
+  --astro-code-token-function: #5200b5;
+  --astro-code-token-string-expression: #005dc1;
+  --astro-code-token-string: #005bbc;
+
+  /* Dark theme */
 
   @variant dark {
     --color-canvas: theme(colors.black);
@@ -33,9 +51,21 @@
     --color-link: theme(colors.cyan.400);
     --color-link-hover: theme(colors.cyan.200);
 
+    --color-table-border: theme(colors.neutral.800);
+    --color-table-header-canvas: theme(colors.neutral.900);
+
     --color-code-border: theme(colors.neutral.800);
-    --color-code-canvas: theme(colors.neutral.900);
+    --color-code-canvas: theme(colors.black);
     --color-code-ink: theme(colors.neutral.300);
+
+    /* Astro code */
+
+    /* Tokens */
+    --astro-code-token-comment: #cca879;
+    --astro-code-token-keyword: #ff8df4;
+    --astro-code-token-function: #d4b0ff;
+    --astro-code-token-string-expression: #94c0ef;
+    --astro-code-token-string: #94c0ef;
   }
 }
 
@@ -49,4 +79,8 @@
 
 @utility link {
   @apply inline-flex gap-[0.25em] items-center font-medium text-(--color-link) hover:text-(--color-link-hover);
+}
+
+.astro-code {
+  @apply border border-(--color-code-border) rounded-md p-3;
 }

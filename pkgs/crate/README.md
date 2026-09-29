@@ -94,8 +94,6 @@ printf '{{ name | to_snake_case }}' | tera name="Hello World"
 | `to_title_case`                          | `Hello World`            |
 | `to_train_case`                          | `Hello-World`            |
 
-Filters accept strings and can be chained with other Tera filters.
-
 ## License
 
 [MIT © Sasha Koss](https://koss.nocorp.me/mit/)

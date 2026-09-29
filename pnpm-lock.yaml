@@ -20,6 +20,9 @@ importers:
       astro:
         specifier: 7.2.3
         version: 7.2.3(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.3)(@types/node@22.20.3)(jiti@2.7.0)
+      smollit:
+        specifier: ^0.3.0
+        version: 0.3.0
     devDependencies:
       '@astrojs/cloudflare':
         specifier: 14.2.1
@@ -1857,6 +1860,9 @@ packages:
   smol-toml@1.8.0:
     resolution: {integrity: sha512-kCZr2V3ch9i00x8zXRhjUNVcjG9ijES5dDudkXvUVCT5QlJNQWElSJdZqyPemffHoLNUYwOcou0Fy+ojN0uHSQ==}
     engines: {node: '>= 18'}
+
+  smollit@0.3.0:
+    resolution: {integrity: sha512-nboLFhk0xQf7Jl4OnStrp1RXBC5YyeH6+i/xY341bzVD452vcEjUM5rO4xFkJ2cmkLwplIwfYSqnmIRVuII6dw==}
 
   source-map-js@1.2.1:
     resolution: {integrity: sha512-UXWMKhLOwVKb728IUtQPXxfYU+usdybtUrK/8uGE8CQMvrhOpwvzDBwj0QhSL7MQc7vIsISBG8VQ8+IDQxpfQA==}
@@ -3764,6 +3770,8 @@ snapshots:
   sisteransi@1.0.5: {}
 
   smol-toml@1.8.0: {}
+
+  smollit@0.3.0: {}
 
   source-map-js@1.2.1: {}
 
