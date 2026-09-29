@@ -131,6 +131,11 @@ aube = { path = ".mise/locks/npm-pnpm/11.24.0", digest = "sha256:fc5b88d016fff14
 backend = "npm:pnpm"
 specifiers = ["latest"]
 
+[[tools.pnpm]]
+version = "12.6.0"
+backend = "aqua:pnpm/pnpm"
+specifiers = ["latest"]
+
 [[tools.rust]]
 version = "stable"
 backend = "core:rust"
