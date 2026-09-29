@@ -53,6 +53,46 @@ const CONTEXTS: [(&str, &str); 3] = [
     ("yaml", "user:\n  name: Ada\nenabled: true\nnumbers: [1, 2]"),
 ];
 
+#[test]
+fn renders_heck_case_filters() {
+    for (filter, expected) in [
+        ("to_upper_camel_case", "XmlHttpRequest"),
+        ("to_pascal_case", "XmlHttpRequest"),
+        ("to_lower_camel_case", "xmlHttpRequest"),
+        ("to_snake_case", "xml_http_request"),
+        ("to_kebab_case", "xml-http-request"),
+        ("to_shouty_snake_case", "XML_HTTP_REQUEST"),
+        ("to_shouty_kebab_case", "XML-HTTP-REQUEST"),
+        ("to_title_case", "Xml Http Request"),
+        ("to_train_case", "Xml-Http-Request"),
+    ] {
+        assert_render(
+            &format!("{{{{ name | {filter} }}}}"),
+            &["name=XMLHttp request"],
+            expected,
+        );
+        assert_render(&format!("{{{{ name | {filter} }}}}"), &["name="], "");
+    }
+    assert_render(
+        "{{ name | to_snake_case | upper }}",
+        &["name=Déjà Vu"],
+        "DÉJÀ_VU",
+    );
+}
+
+#[test]
+fn case_filters_reject_non_strings() {
+    for value in ["42", "true", "null", "[]", "{}"] {
+        let output = render(
+            "before {{ name | to_snake_case }}",
+            &["--json", &format!(r#"{{"name":{value}}}"#)],
+        );
+        assert!(!output.status.success(), "accepted {value}");
+        assert!(output.stdout.is_empty());
+        assert!(String::from_utf8_lossy(&output.stderr).contains("Failed to render template"));
+    }
+}
+
 const TEMPLATE: &str = "{% if enabled %}{{ user.name | upper }}:{% for n in numbers %}{{ n + 1 }}{% endfor %}{% endif %}";
 
 #[test]

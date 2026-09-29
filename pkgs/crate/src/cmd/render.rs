@@ -38,7 +38,10 @@ impl Run for YtrCmdRender {
         io::stdin()
             .read_to_string(&mut template)
             .context("Failed to read template from stdin")?;
-        let rendered = Tera::one_off(&template, &context, false)
+        let mut tera = Tera::default();
+        register_filters(&mut tera);
+        let rendered = tera
+            .render_str(&template, &context, false)
             .context("Failed to render template from stdin")?;
         match io::stdout().lock().write_all(rendered.as_bytes()) {
             Err(err) if err.kind() == io::ErrorKind::BrokenPipe => Ok(()),
