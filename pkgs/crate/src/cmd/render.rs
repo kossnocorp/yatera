@@ -6,6 +6,12 @@ use tera::{Context, Tera};
 
 #[derive(Args, Debug)]
 pub struct YtrCmdRender {
+    /// Read the template from a file instead of stdin
+    #[usage(long)]
+    pub from: Option<PathBuf>,
+    /// Write the rendered result to a file instead of stdout (overwrites existing files)
+    #[usage(long)]
+    pub to: Option<PathBuf>,
     /// Variables as name=value strings; override structured context values
     #[usage(required = false)]
     pub arguments: Vec<String>,
@@ -34,15 +40,29 @@ impl Run for YtrCmdRender {
 
     fn run(self) -> Self::Output {
         let context = self.context()?;
-        let mut template = String::new();
-        io::stdin()
-            .read_to_string(&mut template)
-            .context("Failed to read template from stdin")?;
+        let template = if let Some(path) = &self.from {
+            std::fs::read_to_string(path)
+                .with_context(|| format!("Failed to read template file {}", path.display()))?
+        } else {
+            let mut template = String::new();
+            io::stdin()
+                .read_to_string(&mut template)
+                .context("Failed to read template from stdin")?;
+            template
+        };
         let mut tera = Tera::default();
         register_filters(&mut tera);
-        let rendered = tera
-            .render_str(&template, &context, false)
-            .context("Failed to render template from stdin")?;
+        let rendered =
+            tera.render_str(&template, &context, false)
+                .with_context(|| match &self.from {
+                    Some(path) => format!("Failed to render template file {}", path.display()),
+                    None => "Failed to render template from stdin".to_owned(),
+                })?;
+        if let Some(path) = &self.to {
+            return std::fs::write(path, rendered).with_context(|| {
+                format!("Failed to write rendered template to {}", path.display())
+            });
+        }
         match io::stdout().lock().write_all(rendered.as_bytes()) {
             Err(err) if err.kind() == io::ErrorKind::BrokenPipe => Ok(()),
             result => result.context("Failed to write rendered template to stdout"),

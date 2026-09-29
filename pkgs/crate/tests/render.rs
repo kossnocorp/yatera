@@ -166,6 +166,8 @@ fn help_exposes_root_options() {
     assert!(output.status.success());
     let help = String::from_utf8(output.stdout).unwrap();
     for flag in [
+        "--from",
+        "--to",
         "--json",
         "--json-file",
         "--toml",
@@ -175,4 +177,77 @@ fn help_exposes_root_options() {
     ] {
         assert!(help.contains(flag));
     }
+}
+
+#[test]
+fn renders_from_and_to_files_independently() {
+    let directory = tempfile::tempdir().unwrap();
+    let source = directory.path().join("template.ts.tera");
+    let target = directory.path().join("module.ts");
+    let from = source.to_str().unwrap();
+    let to = target.to_str().unwrap();
+    std::fs::write(
+        &source,
+        "export const {{ name | to_snake_case }} = {{ value }};",
+    )
+    .unwrap();
+    assert_render(
+        "ignored stdin",
+        &["--from", from, "name=HelloWorld", "value=42"],
+        "export const hello_world = 42;",
+    );
+    assert_render(
+        "ignored stdin",
+        &[
+            "--from",
+            from,
+            "--to",
+            to,
+            "--json",
+            r#"{"name":"HelloWorld","value":42}"#,
+        ],
+        "",
+    );
+    assert_eq!(
+        std::fs::read_to_string(&target).unwrap(),
+        "export const hello_world = 42;"
+    );
+    assert_render("{{ value }}", &["--to", to, "value=short"], "");
+    assert_eq!(std::fs::read_to_string(&target).unwrap(), "short");
+    assert_render("", &["--from", to, "--to", to], "");
+    assert_eq!(std::fs::read_to_string(&target).unwrap(), "short");
+}
+
+#[test]
+fn file_errors_preserve_existing_output() {
+    let directory = tempfile::tempdir().unwrap();
+    let source = directory.path().join("broken.tera");
+    let target = directory.path().join("output.txt");
+    let missing = directory.path().join("missing.tera");
+    std::fs::write(&source, "before {{").unwrap();
+    std::fs::write(&target, "existing output").unwrap();
+    for (path, message) in [
+        (&source, "Failed to render template file"),
+        (&missing, "Failed to read template file"),
+    ] {
+        let output = render(
+            "",
+            &[
+                "--from",
+                path.to_str().unwrap(),
+                "--to",
+                target.to_str().unwrap(),
+            ],
+        );
+        assert!(!output.status.success());
+        assert!(output.stdout.is_empty());
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        assert!(stderr.contains(message), "{stderr}");
+        assert!(stderr.contains(path.to_str().unwrap()), "{stderr}");
+        assert_eq!(std::fs::read_to_string(&target).unwrap(), "existing output");
+    }
+    let output = render("rendered", &["--to", directory.path().to_str().unwrap()]);
+    assert!(!output.status.success());
+    assert!(output.stdout.is_empty());
+    assert!(String::from_utf8_lossy(&output.stderr).contains("Failed to write rendered template"));
 }
