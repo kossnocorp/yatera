@@ -1,0 +1,10 @@
+name: Display Stats
+description: Display compilation cache statistics.
+
+runs:
+  using: composite
+
+  steps:
+    - name: Show sccache Stats
+      shell: bash
+      run: sccache --show-stats

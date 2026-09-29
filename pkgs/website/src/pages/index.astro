@@ -1,0 +1,130 @@
+---
+import Layout from "#/ui/layouts/Layout.astro";
+import GitHubIcon from "#/assets/github-original.svg";
+import Code from "astro/components/Code.astro";
+---
+
+<Layout
+  title="Yatera - Yet Another Tera CLI"
+  description="Tera template rendering CLI"
+>
+  <div class="page">
+    <main class="landing">
+      <section class="section hero">
+        <header class="heading">
+          <h1>Yatera</h1>
+
+          <p class="subheadline">Yet Another Tera CLI</p>
+        </header>
+
+        <p class="description">Renders Tera templates from the command line:</p>
+
+        <Code code={`tera template.tera --var-name=value`} lang="bash" />
+
+        <nav class="links">
+          <ul>
+            <li>
+              <a href="https://github.com/kossnocorp/yatera" class="link">
+                <GitHubIcon class="icon" />GitHub
+              </a>
+            </li>
+          </ul>
+        </nav>
+      </section>
+
+      <section class="section install">
+        <h2>Install yatera</h2>
+
+        <ul>
+          <li>
+            <span class="label">macOS/Linux:</span>
+            <pre><code>curl -fsSL https://yatera.fyi/install.sh | sh</code></pre>
+          </li>
+          <li>
+            <span class="label">Windows:</span>
+            <pre><code>irm https://yatera.fyi/install.ps1 | iex</code></pre>
+          </li>
+          <li>
+            <span class="label">Cargo Binstall:</span>
+            <pre><code>cargo binstall yatera</code></pre>
+          </li>
+        </ul>
+      </section>
+    </main>
+
+    <footer>
+      Sasha Koss © 2026 <a href="https://koss.nocorp.me/mit" class="link"
+        >MIT License</a
+      >
+    </footer>
+  </div>
+</Layout>
+
+<style>
+  @reference "#/ui/styles/global.css";
+
+  .page {
+    @apply w-full max-w-5xl mx-auto px-6 py-12 sm:px-12 sm:py-20 flex flex-col gap-20;
+  }
+
+  .landing {
+    @apply flex flex-col gap-12;
+  }
+
+  .section {
+    @apply flex flex-col gap-4;
+  }
+
+  h1 {
+    @apply text-5xl sm:text-7xl font-bold text-(--color-heading-1);
+  }
+
+  h2 {
+    @apply text-xl font-bold text-(--color-heading-2);
+  }
+
+  h3 {
+    @apply text-base font-bold text-(--color-heading-3);
+  }
+
+  .hero {
+    & .heading {
+      @apply flex flex-col gap-2;
+
+      & .subheadline {
+        @apply text-xl font-semibold text-(--color-heading-2);
+      }
+    }
+
+    & .description,
+    & .links {
+      @apply text-balance max-w-xl;
+    }
+
+    & .description {
+      @apply text-(--color-text) text-lg;
+    }
+  }
+
+  .install {
+    & ul {
+      @apply flex flex-col gap-4;
+
+      & li {
+        @apply flex flex-col gap-2;
+      }
+
+      & .label {
+        @apply font-semibold text-(--color-heading-2);
+      }
+
+      & pre {
+        @apply border border-(--color-code-border) rounded-md px-2 py-1 w-full max-w-md overflow-x-auto font-mono bg-(--color-code-canvas) text-(--color-code-ink) text-sm;
+      }
+    }
+  }
+
+  footer {
+    @apply opacity-70 hover:opacity-100;
+  }
+</style>

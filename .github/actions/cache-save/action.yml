@@ -1,0 +1,94 @@
+name: Save Cache
+description: Save development environment caches.
+
+runs:
+  using: composite
+
+  steps:
+    - name: Lookup mise Cache
+      id: lookup-mise-cache
+      uses: actions/cache/restore@v5
+      with:
+        path: ~/.local/share/mise
+        key: mise-${{ runner.os }}-${{ hashFiles('**/mise.toml', '**/mise.lock') }}
+        lookup-only: true
+
+    - name: Save mise Cache
+      if: ${{ steps.lookup-mise-cache.outputs.cache-hit != 'true' }}
+      uses: actions/cache/save@v5
+      with:
+        path: ~/.local/share/mise
+        key: mise-${{ runner.os }}-${{ hashFiles('**/mise.toml', '**/mise.lock') }}
+
+    - name: Lookup mise State Cache
+      id: lookup-mise
+      uses: actions/cache/restore@v5
+      with:
+        path: ~/.local/state/mise
+        key: mise-state-${{ runner.os }}-${{ hashFiles('**/mise.toml') }}-${{ github.sha }}
+        lookup-only: true
+
+    - name: Save mise State
+      if: ${{ steps.lookup-mise.outputs.cache-hit != 'true' }}
+      uses: actions/cache/save@v5
+      with:
+        path: ~/.local/state/mise
+        key: mise-state-${{ runner.os }}-${{ hashFiles('**/mise.toml') }}-${{ github.sha }}
+
+    - name: Lookup rustup Cache
+      id: lookup-rustup
+      uses: actions/cache/restore@v5
+      with:
+        path: ~/.rustup
+        key: rustup-${{ runner.os }}-${{ hashFiles('**/rust-toolchain.toml') }}
+        lookup-only: true
+
+    - name: Save rustup Cache
+      if: ${{ steps.lookup-rustup.outputs.cache-hit != 'true' }}
+      uses: actions/cache/save@v5
+      with:
+        path: ~/.rustup
+        key: rustup-${{ runner.os }}-${{ hashFiles('**/rust-toolchain.toml') }}
+
+    - name: Lookup Cargo Cache
+      id: lookup-cargo
+      uses: actions/cache/restore@v5
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          ~/.cargo/binstall
+          ~/.cargo/env
+        key: cargo-${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}
+        lookup-only: true
+
+    - name: Save Cargo Cache
+      if: ${{ steps.lookup-cargo.outputs.cache-hit != 'true' }}
+      uses: actions/cache/save@v5
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          ~/.cargo/binstall
+          ~/.cargo/env
+        key: cargo-${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}
+
+    - name: Get pnpm Store Path
+      id: pnpm-store
+      shell: bash
+      run: echo "STORE_PATH=$(pnpm store path)" >> "$GITHUB_OUTPUT"
+
+    - name: Lookup pnpm Cache
+      id: lookup-pnpm
+      uses: actions/cache/restore@v5
+      with:
+        path: ${{ steps.pnpm-store.outputs.STORE_PATH }}
+        key: pnpm-${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+        lookup-only: true
+
+    - name: Save pnpm Cache
+      if: ${{ steps.lookup-pnpm.outputs.cache-hit != 'true' }}
+      uses: actions/cache/save@v5
+      with:
+        path: ${{ steps.pnpm-store.outputs.STORE_PATH }}
+        key: pnpm-${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}

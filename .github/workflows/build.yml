@@ -1,0 +1,63 @@
+name: Build
+
+on:
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      artifact_suffix:
+        description: Suffix appended to uploaded artifact names. Defaults to the commit SHA.
+        required: false
+        type: string
+
+jobs:
+  build:
+    name: Build ${{ matrix.target }}
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+          - os: macos-26-intel
+            target: x86_64-apple-darwin
+          - os: macos-26
+            target: aarch64-apple-darwin
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+
+    steps:
+      - name: Check Out Repository
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.sha }}
+
+      - name: Set Up Dev Env
+        uses: ./.github/actions/setup
+
+      - name: Add Rust Target
+        run: rustup target add ${{ matrix.target }}
+
+      - name: Build Binary
+        run: cargo build --locked --release --package yatera --bin tera --target ${{ matrix.target }}
+
+      - name: Derive Binary Extension
+        id: binary_extension
+        shell: bash
+        run: |
+          extension=""
+          if [[ "${{ matrix.target }}" == *"windows"* ]]; then
+            extension=".exe"
+          fi
+          echo "value=$extension" >> "$GITHUB_OUTPUT"
+
+      - name: Upload Binary
+        uses: actions/upload-artifact@v6
+        with:
+          name: tera-${{ inputs.artifact_suffix || github.sha }}-${{ matrix.target }}${{ steps.binary_extension.outputs.value }}
+          path: target/${{ matrix.target }}/release/tera${{ steps.binary_extension.outputs.value }}
+          if-no-files-found: error
+
+      - name: Display Stats
+        if: always()
+        uses: ./.github/actions/stats

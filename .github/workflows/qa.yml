@@ -1,0 +1,39 @@
+name: QA
+
+on:
+  workflow_call:
+  push:
+    branches:
+      - main
+
+jobs:
+  qa:
+    name: QA
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check Out Repository
+        uses: actions/checkout@v6
+
+      - name: Set Up Dev Env
+        uses: ./.github/actions/setup
+
+      - name: Check Formatting
+        run: cargo fmt --all --check
+
+      - name: Run Clippy
+        run: cargo clippy --workspace --all-targets --all-features -- -D warnings
+
+      - name: Run Unit Tests
+        run: cargo test --locked --workspace --all-features
+
+      - name: Build Website
+        run: mise //pkgs/website:build
+
+      - name: Save Cache
+        if: always()
+        uses: ./.github/actions/cache-save
+
+      - name: Display Stats
+        if: always()
+        uses: ./.github/actions/stats

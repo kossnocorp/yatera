@@ -1,0 +1,15 @@
+compatibility_date = "2026-04-09"
+compatibility_flags = ["global_fetch_strictly_public", "nodejs_compat"]
+name = "yatera-website"
+main = "@astrojs/cloudflare/entrypoints/server"
+
+[[routes]]
+pattern = "yatera.fyi"
+custom_domain = true
+
+[assets]
+directory = "./dist"
+binding = "ASSETS"
+
+[observability]
+enabled = true

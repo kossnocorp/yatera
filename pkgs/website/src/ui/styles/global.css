@@ -1,0 +1,52 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+:root {
+  --color-canvas: theme(colors.white);
+
+  --color-ink: theme(colors.neutral.900);
+
+  --color-heading-1: theme(colors.black);
+  --color-heading-2: theme(colors.neutral.800);
+  --color-heading-3: theme(colors.neutral.700);
+
+  --color-text: theme(colors.neutral.700);
+
+  --color-link: theme(colors.cyan.900);
+  --color-link-hover: theme(colors.cyan.700);
+
+  --color-code-border: theme(colors.neutral.200);
+  --color-code-canvas: theme(colors.neutral.50);
+  --color-code-ink: theme(colors.neutral.900);
+
+  @variant dark {
+    --color-canvas: theme(colors.black);
+
+    --color-ink: theme(colors.neutral.100);
+
+    --color-heading-1: theme(colors.white);
+    --color-heading-2: theme(colors.neutral.200);
+    --color-heading-3: theme(colors.neutral.400);
+
+    --color-text: theme(colors.neutral.400);
+
+    --color-link: theme(colors.cyan.400);
+    --color-link-hover: theme(colors.cyan.200);
+
+    --color-code-border: theme(colors.neutral.800);
+    --color-code-canvas: theme(colors.neutral.900);
+    --color-code-ink: theme(colors.neutral.300);
+  }
+}
+
+@utility icon {
+  @apply h-[1em] inline-flex;
+
+  & g {
+    fill: hsl(from currentColor h calc(s * 0.5) l / 0.6);
+  }
+}
+
+@utility link {
+  @apply inline-flex gap-[0.25em] items-center font-medium text-(--color-link) hover:text-(--color-link-hover);
+}

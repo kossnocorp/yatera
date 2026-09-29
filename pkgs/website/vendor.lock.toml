@@ -1,0 +1,7 @@
+[files."https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/github/github-original.svg"]
+direct = true
+version = "sha256:45262793de6292206a895ed63593cdb1eaed82074173f7f4b5bdb3e427ca805a"
+revision = "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/github/github-original.svg"
+hash = "sha256:45262793de6292206a895ed63593cdb1eaed82074173f7f4b5bdb3e427ca805a"
+source = "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/github/github-original.svg"
+path = "vendor/@http/cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/github/github-original.svg"

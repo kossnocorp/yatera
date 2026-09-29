@@ -1,0 +1,120 @@
+# Monorepo #####################################################################
+
+monorepo_root = true
+[monorepo]
+config_roots = ["pkgs/*"]
+
+[tools]
+
+
+# Stack ########################################################################
+
+node = "lts"
+"npm:pnpm" = "latest"
+
+
+# Tools ########################################################################
+
+cargo-binstall = "latest" # Install cargo binaries
+shfmt = "latest"
+git-cliff = "latest" # Change log generator
+sccache = "latest" # Rust compiler cache
+fnox = "latest" # Secrets
+
+
+# Settings #####################################################################
+
+[settings]
+lockfile = true
+idiomatic_version_file_enable_tools = ["rust"] # Use rust-toolchain.toml
+
+
+# Tasks ########################################################################
+
+# install ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+[tasks.install]
+depends = ["install/pnpm"]
+
+# install/pnpm ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+[tasks."install/pnpm"]
+run = "pnpm install"
+
+
+# Build ========================================================================
+
+# build ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+[tasks.build]
+run = "cargo build"
+
+# build:release ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+[tasks."build:release"]
+run = "cargo build --release"
+
+
+# Symlink ======================================================================
+
+# symlink ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+[tasks.symlink]
+run = "ln -sf $(pwd)/target/release/tera $HOME/.local/bin/tera"
+depends = ["build:release"]
+
+
+# Test =========================================================================
+
+# test ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+[tasks.test]
+run = "cargo nextest run --no-tests pass"
+
+# test:watch ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+[tasks."test:watch"]
+run = "bacon nextest"
+
+# test/snapshots:review ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+[tasks."test/snapshots:review"]
+run = "cargo insta test --review"
+
+# test/snapshots:approve ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+[tasks."test/snapshots:approve"]
+run = "cargo insta approve"
+
+
+# Version ======================================================================
+
+# version ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+[tasks."version"]
+usage = '''
+arg "<version>" help="Version to apply"
+'''
+run = '''
+#!/usr/bin/env bash
+cargo release version {{usage.version}} \
+  --workspace \
+  --no-confirm \
+  --execute
+'''
+
+
+# Publish ======================================================================
+
+# publish ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+[tasks.publish]
+run = '''
+#!/usr/bin/env bash
+fnox exec -- cargo release publish \
+  --workspace \
+  --all-features \
+  --no-confirm \
+  --allow-branch '*' \
+  --execute
+'''
+
+# publish:dry ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+[tasks."publish:dry"]
+run = '''
+#!/usr/bin/env bash
+cargo release publish \
+  --workspace \
+  --all-features \
+  --no-confirm \
+  --allow-branch '*'
+'''

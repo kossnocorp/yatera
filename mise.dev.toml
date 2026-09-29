@@ -1,0 +1,7 @@
+# Tools ========================================================================
+[tools]
+"cargo:cargo-edit" = "latest" # Crates management
+fnox = "latest" # Secrets
+"cargo:bacon" = "latest" # Build system
+"cargo:cargo-nextest" = "latest" # Test runner
+"cargo:cargo-insta" = "latest" # Snapshot testing

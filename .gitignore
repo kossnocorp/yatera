@@ -1,0 +1,22 @@
+# Rust
+/target/
+
+# Node.js
+node_modules/
+
+# TypeScript
+.ts/
+
+# Dist
+/pkgs/*/dist/
+/pkgs/vscode/*.vsix
+
+# Astro
+.astro/
+
+# Cloudflare
+.wrangler/
+worker-configuration.d.ts
+
+# Git Worktrees
+crossshell.wt.code-workspace

@@ -1,0 +1,93 @@
+name: Set Up Dev Env
+description: Set up development tools, dependencies, and restored caches.
+
+runs:
+  using: composite
+
+  steps:
+    - name: Configure Rust Compilation
+      shell: bash
+      run: echo "CARGO_INCREMENTAL=0" >> "$GITHUB_ENV"
+
+    - name: Install mise
+      uses: jdx/mise-action@v4
+      with:
+        cache: false
+        install: false
+
+    - name: Restore mise Cache
+      uses: actions/cache/restore@v5
+      with:
+        path: ~/.local/share/mise
+        key: mise-${{ runner.os }}-${{ hashFiles('**/mise.toml', '**/mise.lock') }}
+        restore-keys: |
+          mise-${{ runner.os }}-
+
+    - name: Restore mise State
+      uses: actions/cache/restore@v5
+      with:
+        path: ~/.local/state/mise
+        key: mise-state-${{ runner.os }}-${{ hashFiles('**/mise.toml') }}-${{ github.sha }}
+        restore-keys: |
+          mise-state-${{ runner.os }}-${{ hashFiles('**/mise.toml') }}-
+          mise-state-${{ runner.os }}-
+
+    - name: Restore rustup Cache
+      uses: actions/cache/restore@v5
+      with:
+        path: ~/.rustup
+        key: rustup-${{ runner.os }}-${{ hashFiles('**/rust-toolchain.toml') }}
+        restore-keys: |
+          rustup-${{ runner.os }}-
+
+    - name: Restore Cargo Cache
+      uses: actions/cache/restore@v5
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          ~/.cargo/binstall
+          ~/.cargo/env
+        key: cargo-${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          cargo-${{ runner.os }}-
+
+    - name: Install Tools
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+      run: |
+        mise trust --yes
+        mise install
+
+    - name: Configure sccache Credentials
+      uses: actions/github-script@v9
+      with:
+        script: |
+          core.exportVariable('ACTIONS_RESULTS_URL', process.env.ACTIONS_RESULTS_URL || '');
+          core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env.ACTIONS_RUNTIME_TOKEN || '');
+
+    - name: Configure sccache
+      shell: bash
+      run: |
+        echo "SCCACHE_GHA_ENABLED=on" >> "$GITHUB_ENV"
+        echo "ACTIONS_CACHE_SERVICE_V2=on" >> "$GITHUB_ENV"
+        echo "SCCACHE_PATH=$(mise which sccache)" >> "$GITHUB_ENV"
+        echo "RUSTC_WRAPPER=$(mise which sccache)" >> "$GITHUB_ENV"
+
+    - name: Get pnpm Store Path
+      id: pnpm-store
+      shell: bash
+      run: echo "STORE_PATH=$(pnpm store path)" >> "$GITHUB_OUTPUT"
+
+    - name: Restore pnpm Cache
+      uses: actions/cache/restore@v5
+      with:
+        path: ${{ steps.pnpm-store.outputs.STORE_PATH }}
+        key: pnpm-${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+        restore-keys: |
+          pnpm-${{ runner.os }}-
+
+    - name: Install Dependencies
+      shell: bash
+      run: mise :install

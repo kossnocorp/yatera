@@ -1,0 +1,20 @@
+[package]
+name = "yateracli"
+version = "0.1.0"
+edition = "2024"
+description = "Yet another Tera CLI"
+authors = ["Sasha Koss <koss@nocorp.me>"]
+license = "MIT"
+repository = "https://github.com/kossnocorp/yateracli"
+
+[[bin]]
+name = "tera"
+path = "src/main.rs"
+
+[package.metadata.binstall]
+pkg-url = "{ repo }/releases/download/v{ version }/tera-v{ version }-{ target }{ binary-ext }"
+pkg-fmt = "bin"
+
+[dependencies]
+anyhow = "1.0.104"
+usage = { package = "usage-rs", version = "6" }
