@@ -1,20 +1,15 @@
 use crate::prelude::*;
 
 #[derive(Cli)]
-#[usage(
-    run,
-    bin = "tera",
-    about = "Yet Another Tera CLI",
-    default_subcommand = "render"
-)]
+#[usage(bin = "tera", about = "Render a Tera v2 template from stdin to stdout")]
 pub struct YtrCli {
-    #[usage(subcommand)]
-    pub command: YtrCmd,
+    #[usage(flatten)]
+    pub render: YtrCmdRender,
 }
 
 impl YtrCli {
     pub fn main() {
-        YtrCli::parse().run().unwrap_or_else(|err| {
+        YtrCli::parse().render.run().unwrap_or_else(|err| {
             eprintln!("Error: {:?}", err);
             std::process::exit(1);
         });
