@@ -2,7 +2,7 @@
 
 Yet another [Tera template v2](https://keats.github.io/tera/) CLI.
 
-It features [rich DX](#usage) and [extra built-in filters](#built-ins).
+It features [rich DX](#usage) and [extra built-ins](#built-ins).
 
 ## Installation
 
@@ -43,36 +43,103 @@ cargo install yatera
 Use the `tera` command to render templates from stdin:
 
 ```bash
-# Render a template with variables
+# Render a template with variables:
 cat template.tera | tera var1=value var2=value > output.txt
 
-# Use structured data as variables (JSON, TOML, or YAML)
-cat template.tera | tera --json '{"hello":"world"}' > output.txt
+# Use structured data as variables (JSON/TOML/YAML):
+cat template.tera | tera --json '{"var":"value"}' > output.txt
 cat template.tera | tera --json-file vars.json > output.txt
 
-# Read and write files directly (can be used individually)
+# Read and write files directly:
 tera --from template.tera --to output.txt --json-file vars.json
 ```
 
-### Arguments
+Environment sources parse the variable's contents as JSON, TOML, or YAML. Choose
+one structured context source; `name=value` arguments override its values.
+Missing variables or invalid context contents produce an error.
 
-The following arguments are available (also see `tera --help`):
+### Input
 
-| Argument                    | Description                                           |
-| --------------------------- | ----------------------------------------------------- |
-| `var1=value var2=value`     | Set template variables from the command line          |
-| `--json '{"key":"value"}'`  | Set template variables from a JSON string             |
-| `--json-file vars.json`     | Set template variables from a JSON file               |
-| `--toml-file vars.toml`     | Set template variables from a TOML file               |
-| `--toml "$(cat vars.toml)"` | Set template variables from a TOML string             |
-| `--yaml-file vars.yaml`     | Set template variables from a YAML file               |
-| `--yaml "$(cat vars.yaml)"` | Set template variables from a YAML string             |
-| `--from template.tera`      | Read the template from a file instead of stdin        |
-| `--to output.txt`           | Write the rendered result to a file instead of stdout |
+By default Yatera reads the template from stdin. You can override this behavior by using the `--from` option to specify a template file:
+
+```bash
+tera --from template.tera > output.txt
+```
+
+### Output
+
+By default Yatera writes the rendered result to stdout. You can override this behavior by using the `--to` option to specify an output file:
+
+```bash
+tera --from template.tera --to output.txt
+```
+
+### Variables
+
+Yatera supports multiple ways to provide template variables, from passing arguments to JSON/TOML/YAML strings or files.
+
+#### Argument Variables
+
+To provide template variables directly as command-line arguments, use the `name=value` format:
+
+```bash
+cat template.tera | tera var1=value var2=value > output.txt
+```
+
+#### Variable Files
+
+To read variables from JSON/TOML/YAML files:
+
+```bash
+cat template.tera | tera --json-file vars.json > output.txt
+```
+
+**CLI options**:
+
+| Argument                | Format |
+| ----------------------- | ------ |
+| `--json-file vars.json` | JSON   |
+| `--toml-file vars.toml` | TOML   |
+| `--yaml-file vars.yaml` | YAML   |
+
+#### Variable Strings
+
+To read variables from JSON/TOML/YAML strings:
+
+```bash
+cat template.tera | tera --json '{"var":"value"}' > output.txt
+```
+
+**CLI options**:
+
+| Argument                    | Format |
+| --------------------------- | ------ |
+| `--json '{"var":"value"}'`  | JSON   |
+| `--toml "$(cat vars.toml)"` | TOML   |
+| `--yaml "$(cat vars.yaml)"` | YAML   |
+
+##### Environment Variable Strings
+
+Yatera also supports reading variables from JSON/TOML/YAML strings stored in environment variables:
+
+```bash
+export VARS='{"var":"value"}'
+cat template.tera | tera --json-env VARS
+```
+
+**CLI options**:
+
+| Argument          | Format |
+| ----------------- | ------ |
+| `--json-env VARS` | JSON   |
+| `--toml-env VARS` | TOML   |
+| `--yaml-env VARS` | YAML   |
 
 ## Built-Ins
 
-### Filters
+Yatera supports all default [Tera built-ins](https://keats.github.io/tera/#built-ins) as well as extra filters.
+
+### Extra Filters
 
 #### heck
 
