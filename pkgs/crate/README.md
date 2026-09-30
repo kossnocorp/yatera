@@ -51,7 +51,7 @@ cat template.tera | tera --json '{"var":"value"}' > output.txt
 cat template.tera | tera --json-file vars.json > output.txt
 
 # Read and write files directly:
-tera --from template.tera --to output.txt --json-file vars.json
+tera --in-file template.tera --out-file output.txt --json-file vars.json
 ```
 
 Environment sources parse the variable's contents as JSON, TOML, or YAML. Choose
@@ -60,18 +60,18 @@ Missing variables or invalid context contents produce an error.
 
 ### Input
 
-By default Yatera reads the template from stdin. You can override this behavior by using the `--from` option to specify a template file:
+By default Yatera reads the template from stdin. You can override this behavior by using the `--in-file` option to specify a template file:
 
 ```bash
-tera --from template.tera > output.txt
+tera --in-file template.tera > output.txt
 ```
 
 ### Output
 
-By default Yatera writes the rendered result to stdout. You can override this behavior by using the `--to` option to specify an output file:
+By default Yatera writes the rendered result to stdout. You can override this behavior by using the `--out-file` option to specify an output file:
 
 ```bash
-tera --from template.tera --to output.txt
+tera --in-file template.tera --out-file output.txt
 ```
 
 ### Variables

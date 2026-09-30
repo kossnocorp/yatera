@@ -239,8 +239,8 @@ fn help_exposes_root_options() {
         "--json-env",
         "--toml-env",
         "--yaml-env",
-        "--from",
-        "--to",
+        "--in-file",
+        "--out-file",
         "--json",
         "--json-file",
         "--toml",
@@ -266,15 +266,15 @@ fn renders_from_and_to_files_independently() {
     .unwrap();
     assert_render(
         "ignored stdin",
-        &["--from", from, "name=HelloWorld", "value=42"],
+        &["--in-file", from, "name=HelloWorld", "value=42"],
         "export const hello_world = 42;",
     );
     assert_render(
         "ignored stdin",
         &[
-            "--from",
+            "--in-file",
             from,
-            "--to",
+            "--out-file",
             to,
             "--json",
             r#"{"name":"HelloWorld","value":42}"#,
@@ -285,9 +285,9 @@ fn renders_from_and_to_files_independently() {
         std::fs::read_to_string(&target).unwrap(),
         "export const hello_world = 42;"
     );
-    assert_render("{{ value }}", &["--to", to, "value=short"], "");
+    assert_render("{{ value }}", &["--out-file", to, "value=short"], "");
     assert_eq!(std::fs::read_to_string(&target).unwrap(), "short");
-    assert_render("", &["--from", to, "--to", to], "");
+    assert_render("", &["--in-file", to, "--out-file", to], "");
     assert_eq!(std::fs::read_to_string(&target).unwrap(), "short");
 }
 
@@ -306,9 +306,9 @@ fn file_errors_preserve_existing_output() {
         let output = render(
             "",
             &[
-                "--from",
+                "--in-file",
                 path.to_str().unwrap(),
-                "--to",
+                "--out-file",
                 target.to_str().unwrap(),
             ],
         );
@@ -319,7 +319,10 @@ fn file_errors_preserve_existing_output() {
         assert!(stderr.contains(path.to_str().unwrap()), "{stderr}");
         assert_eq!(std::fs::read_to_string(&target).unwrap(), "existing output");
     }
-    let output = render("rendered", &["--to", directory.path().to_str().unwrap()]);
+    let output = render(
+        "rendered",
+        &["--out-file", directory.path().to_str().unwrap()],
+    );
     assert!(!output.status.success());
     assert!(output.stdout.is_empty());
     assert!(String::from_utf8_lossy(&output.stderr).contains("Failed to write rendered template"));

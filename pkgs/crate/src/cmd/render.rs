@@ -8,10 +8,10 @@ use tera::{Context, Tera};
 pub struct YtrCmdRender {
     /// Read the template from a file instead of stdin
     #[usage(long)]
-    pub from: Option<PathBuf>,
+    pub in_file: Option<PathBuf>,
     /// Write the rendered result to a file instead of stdout (overwrites existing files)
     #[usage(long)]
-    pub to: Option<PathBuf>,
+    pub out_file: Option<PathBuf>,
     /// Variables as name=value strings; override structured context values
     #[usage(required = false)]
     pub arguments: Vec<String>,
@@ -49,7 +49,7 @@ impl Run for YtrCmdRender {
 
     fn run(self) -> Self::Output {
         let context = self.context()?;
-        let template = if let Some(path) = &self.from {
+        let template = if let Some(path) = &self.in_file {
             std::fs::read_to_string(path)
                 .with_context(|| format!("Failed to read template file {}", path.display()))?
         } else {
@@ -61,13 +61,13 @@ impl Run for YtrCmdRender {
         };
         let mut tera = Tera::default();
         register_filters(&mut tera);
-        let rendered =
-            tera.render_str(&template, &context, false)
-                .with_context(|| match &self.from {
-                    Some(path) => format!("Failed to render template file {}", path.display()),
-                    None => "Failed to render template from stdin".to_owned(),
-                })?;
-        if let Some(path) = &self.to {
+        let rendered = tera
+            .render_str(&template, &context, false)
+            .with_context(|| match &self.in_file {
+                Some(path) => format!("Failed to render template file {}", path.display()),
+                None => "Failed to render template from stdin".to_owned(),
+            })?;
+        if let Some(path) = &self.out_file {
             return std::fs::write(path, rendered).with_context(|| {
                 format!("Failed to write rendered template to {}", path.display())
             });

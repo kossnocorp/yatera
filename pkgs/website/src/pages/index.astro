@@ -33,7 +33,7 @@ import { lit } from "smollit";
             cat template.tera | tera --json-file vars.json > output.txt
 
             # Read and write files directly:
-            tera --from template.tera --to output.txt --json-file vars.json
+            tera --in-file template.tera --out-file output.txt --json-file vars.json
           `}
           lang="bash"
           theme="css-variables"
@@ -84,11 +84,11 @@ import { lit } from "smollit";
 
         <p>
           By default Yatera reads the template from stdin. You can override this
-          behavior by using the <code>--from</code> option to specify a template file:
+          behavior by using the <code>--in-file</code> option to specify a template file:
         </p>
 
         <Code
-          code="tera --from template.tera > output.txt"
+          code="tera --in-file template.tera > output.txt"
           lang="bash"
           theme="css-variables"
         />
@@ -97,12 +97,12 @@ import { lit } from "smollit";
 
         <p>
           By default Yatera writes the rendered result to stdout. You can
-          override this behavior by using the <code>--to</code> option to specify
+          override this behavior by using the <code>--out-file</code> option to specify
           an output file:
         </p>
 
         <Code
-          code="tera --from template.tera --to output.txt"
+          code="tera --in-file template.tera --out-file output.txt"
           lang="bash"
           theme="css-variables"
         />
