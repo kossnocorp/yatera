@@ -2,8 +2,14 @@ use std::io::Write;
 use std::process::{Command, Output, Stdio};
 
 fn render(template: &str, args: &[&str]) -> Output {
+    render_with_env(template, args, &[])
+}
+
+fn render_with_env(template: &str, args: &[&str], env: &[(&str, &str)]) -> Output {
     let mut child = Command::new(env!("CARGO_BIN_EXE_tera"))
         .args(args)
+        .env_remove("YATERA_TEST_CONTEXT")
+        .envs(env.iter().copied())
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
@@ -96,6 +102,70 @@ fn case_filters_reject_non_strings() {
 const TEMPLATE: &str = "{% if enabled %}{{ user.name | upper }}:{% for n in numbers %}{{ n + 1 }}{% endfor %}{% endif %}";
 
 #[test]
+fn renders_environment_contexts() {
+    for (format, context) in CONTEXTS {
+        let flag = format!("--{format}-env");
+        let output = render_with_env(
+            &format!("{TEMPLATE}|{{{{ extra }}}}"),
+            &[&flag, "YATERA_TEST_CONTEXT", "extra=override"],
+            &[("YATERA_TEST_CONTEXT", context)],
+        );
+        assert!(
+            output.status.success(),
+            "{}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+        assert_eq!(output.stdout, b"ADA:23|override");
+        assert!(output.stderr.is_empty());
+
+        let output = render_with_env(
+            "{{ enabled }}",
+            &[&flag, "YATERA_TEST_CONTEXT", "enabled=override"],
+            &[("YATERA_TEST_CONTEXT", context)],
+        );
+        assert!(output.status.success());
+        assert_eq!(output.stdout, b"override");
+    }
+}
+
+#[test]
+fn reports_environment_context_errors() {
+    for format in ["json", "toml", "yaml"] {
+        let flag = format!("--{format}-env");
+        for (env, message) in [
+            (vec![], "Failed to read context environment variable"),
+            (vec![("YATERA_TEST_CONTEXT", "[")], "Invalid"),
+        ] {
+            let output = render_with_env("", &[&flag, "YATERA_TEST_CONTEXT"], &env);
+            assert!(!output.status.success());
+            assert!(output.stdout.is_empty());
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            assert!(stderr.contains(message), "{stderr}");
+            assert!(stderr.contains("YATERA_TEST_CONTEXT"), "{stderr}");
+        }
+        for other in ["--json", "--toml-file", "--yaml-env"] {
+            // Use a different environment flag to avoid repeating the same option.
+            if other == flag {
+                continue;
+            }
+            let output = render("", &[&flag, "YATERA_TEST_CONTEXT", other, "unused"]);
+            assert!(!output.status.success());
+            assert!(output.stdout.is_empty());
+            assert!(
+                String::from_utf8_lossy(&output.stderr).contains("Choose only one context source")
+            );
+        }
+    }
+    let output = render_with_env(
+        "",
+        &["--json-env", "YATERA_TEST_CONTEXT"],
+        &[("YATERA_TEST_CONTEXT", "[]")],
+    );
+    assert!(!output.status.success());
+    assert!(String::from_utf8_lossy(&output.stderr).contains("object or mapping"));
+}
+
+#[test]
 fn renders_typed_inline_contexts() {
     for (format, context) in CONTEXTS {
         assert_render(TEMPLATE, &[&format!("--{format}"), context], "ADA:23");
@@ -166,6 +236,9 @@ fn help_exposes_root_options() {
     assert!(output.status.success());
     let help = String::from_utf8(output.stdout).unwrap();
     for flag in [
+        "--json-env",
+        "--toml-env",
+        "--yaml-env",
         "--from",
         "--to",
         "--json",

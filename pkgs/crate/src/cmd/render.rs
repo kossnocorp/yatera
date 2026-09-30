@@ -21,18 +21,27 @@ pub struct YtrCmdRender {
     /// Read context from a JSON file
     #[usage(long)]
     pub json_file: Option<PathBuf>,
+    /// Read JSON context from the named environment variable
+    #[usage(long)]
+    pub json_env: Option<String>,
     /// Context as a TOML table (choose one context source)
     #[usage(long)]
     pub toml: Option<String>,
     /// Read context from a TOML file
     #[usage(long)]
     pub toml_file: Option<PathBuf>,
+    /// Read TOML context from the named environment variable
+    #[usage(long)]
+    pub toml_env: Option<String>,
     /// Context as a YAML mapping (choose one context source)
     #[usage(long)]
     pub yaml: Option<String>,
     /// Read context from a YAML file
     #[usage(long)]
     pub yaml_file: Option<PathBuf>,
+    /// Read YAML context from the named environment variable
+    #[usage(long)]
+    pub yaml_env: Option<String>,
 }
 
 impl Run for YtrCmdRender {
@@ -73,34 +82,61 @@ impl Run for YtrCmdRender {
 impl YtrCmdRender {
     fn context(&self) -> Result<Context> {
         let sources = [
-            ("json", self.json.as_deref(), self.json_file.as_deref()),
-            ("toml", self.toml.as_deref(), self.toml_file.as_deref()),
-            ("yaml", self.yaml.as_deref(), self.yaml_file.as_deref()),
+            (
+                "json",
+                self.json.as_deref(),
+                self.json_file.as_deref(),
+                self.json_env.as_deref(),
+            ),
+            (
+                "toml",
+                self.toml.as_deref(),
+                self.toml_file.as_deref(),
+                self.toml_env.as_deref(),
+            ),
+            (
+                "yaml",
+                self.yaml.as_deref(),
+                self.yaml_file.as_deref(),
+                self.yaml_env.as_deref(),
+            ),
         ];
         let count: usize = sources
             .iter()
-            .map(|(_, inline, file)| usize::from(inline.is_some()) + usize::from(file.is_some()))
+            .map(|(_, inline, file, env)| {
+                usize::from(inline.is_some())
+                    + usize::from(file.is_some())
+                    + usize::from(env.is_some())
+            })
             .sum();
         ensure!(
             count <= 1,
-            "Choose only one context source: --json, --json-file, --toml, --toml-file, --yaml, or --yaml-file"
+            "Choose only one context source: --json, --json-file, --json-env, --toml, --toml-file, --toml-env, --yaml, --yaml-file, or --yaml-env"
         );
 
         let mut context = Context::new();
-        for (format, inline, file) in sources {
+        for (format, inline, file, env) in sources {
             let contents;
             let input = if let Some(path) = file {
                 contents = std::fs::read_to_string(path)
                     .with_context(|| format!("Failed to read context file {}", path.display()))?;
+                contents.as_str()
+            } else if let Some(name) = env {
+                contents = std::env::var(name).with_context(|| {
+                    format!("Failed to read context environment variable {name:?}")
+                })?;
                 contents.as_str()
             } else if let Some(input) = inline {
                 input
             } else {
                 continue;
             };
-            context = parse_context(format, input).with_context(|| match file {
-                Some(path) => format!("Invalid {format} context in {}", path.display()),
-                None => format!("Invalid --{format} context"),
+            context = parse_context(format, input).with_context(|| match (file, env) {
+                (Some(path), _) => format!("Invalid {format} context in {}", path.display()),
+                (_, Some(name)) => {
+                    format!("Invalid {format} context in environment variable {name:?}")
+                }
+                _ => format!("Invalid --{format} context"),
             })?;
         }
 
