@@ -2,7 +2,7 @@ use crate::prelude::*;
 use anyhow::{Context as _, bail, ensure};
 use std::io::{self, Read, Write};
 use std::path::PathBuf;
-use tera::{Context, Tera};
+use yatera::Context;
 
 #[derive(Args, Debug)]
 pub struct YtrCmdRender {
@@ -62,13 +62,12 @@ impl Run for YtrCmdRender {
                 .context("Failed to read template from stdin")?;
             template
         };
-        let mut tera = Tera::default();
-        register_filters(&mut tera);
-        let rendered = tera
-            .render_str(&template, &context, false)
-            .with_context(|| match &self.in_file {
-                Some(path) => format!("Failed to render template file {}", path.display()),
-                None => "Failed to render template from stdin".to_owned(),
+        let rendered =
+            yatera::render_with_context(&template, &context).with_context(|| {
+                match &self.in_file {
+                    Some(path) => format!("Failed to render template file {}", path.display()),
+                    None => "Failed to render template from stdin".to_owned(),
+                }
             })?;
         if let Some(path) = &self.out_file {
             return std::fs::write(path, rendered).with_context(|| {

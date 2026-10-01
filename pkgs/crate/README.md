@@ -40,6 +40,8 @@ cargo install yatera
 
 ## Usage
 
+### CLI
+
 Use the `tera` command to render templates from stdin:
 
 ```bash
@@ -58,7 +60,7 @@ Environment sources parse the variable's contents as JSON, TOML, or YAML. Choose
 one structured context source; `name=value` arguments override its values.
 Missing variables or invalid context contents produce an error.
 
-### Input
+#### Input
 
 By default Yatera reads the template from stdin. You can override this behavior by using the `--in-file` option to specify a template file:
 
@@ -66,7 +68,7 @@ By default Yatera reads the template from stdin. You can override this behavior 
 tera --in-file template.tera > output.txt
 ```
 
-### Output
+#### Output
 
 By default Yatera writes the rendered result to stdout. You can override this behavior by using the `--out-file` option to specify an output file:
 
@@ -74,11 +76,11 @@ By default Yatera writes the rendered result to stdout. You can override this be
 tera --in-file template.tera --out-file output.txt
 ```
 
-### Variables
+#### Variables
 
 Yatera supports multiple ways to provide template variables, from passing arguments to JSON/TOML/YAML strings or files.
 
-#### Argument Variables
+##### Argument Variables
 
 To provide template variables directly as command-line arguments, use the `name=value` format:
 
@@ -94,7 +96,7 @@ cat template.tera | tera --var var1 value --var var2 value > output.txt
 cat template.tera | tera --arg var1 value --arg var2 value > output.txt
 ```
 
-#### Variable Files
+##### Variable Files
 
 To read variables from JSON/TOML/YAML files:
 
@@ -110,7 +112,7 @@ cat template.tera | tera --json-file vars.json > output.txt
 | `--toml-file vars.toml` | TOML   |
 | `--yaml-file vars.yaml` | YAML   |
 
-#### Variable Strings
+##### Variable Strings
 
 To read variables from JSON/TOML/YAML strings:
 
@@ -126,7 +128,7 @@ cat template.tera | tera --json '{"var":"value"}' > output.txt
 | `--toml "$(cat vars.toml)"` | TOML   |
 | `--yaml "$(cat vars.yaml)"` | YAML   |
 
-##### Environment Variable Strings
+###### Environment Variable Strings
 
 Yatera also supports reading variables from JSON/TOML/YAML strings stored in environment variables:
 
@@ -167,6 +169,29 @@ printf '{{ name | snake_case }}' | tera name="Hello World"
 | `shouty_snake_case`                | `HELLO_WORLD`            |
 | `shouty_kebab_case`                | `HELLO-WORLD`            |
 | `train_case`                       | `Hello-World`            |
+
+### Rust Library
+
+Add Yatera to your project with `cargo add yatera`, then render with a hash map:
+
+```rust
+use std::collections::HashMap;
+
+fn main() -> Result<(), yatera::Error> {
+    let vars = HashMap::from([("name".to_owned(), "Hello World")]);
+    let output: String = yatera::render("{{ name | snake_case }}", &vars)?;
+    assert_eq!(output, "hello_world");
+    Ok(())
+}
+```
+
+Values may be strings or other serializable values, such as `serde_json::Value` for mixed types.
+
+For an existing `yatera::Context`, use:
+
+```rs
+yatera::render_with_context(template, &context)
+```
 
 ## License
 
