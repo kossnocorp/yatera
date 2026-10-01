@@ -84,7 +84,8 @@ import { lit } from "smollit";
 
         <p>
           By default Yatera reads the template from stdin. You can override this
-          behavior by using the <code>--in-file</code> option to specify a template file:
+          behavior by using the <code>--in-file</code> option to specify a template
+          file:
         </p>
 
         <Code
@@ -123,6 +124,20 @@ import { lit } from "smollit";
 
         <Code
           code="cat template.tera | tera var1=value var2=value > output.txt"
+          lang="bash"
+          theme="css-variables"
+        />
+
+        <p>
+          Alternatively, use repeatable <code>--var NAME VALUE</code> flags, or the
+          jq-compatible <code>--arg NAME VALUE</code> alias:
+        </p>
+
+        <Code
+          code={lit`
+            cat template.tera | tera --var var1 value --var var2 value > output.txt
+            cat template.tera | tera --arg var1 value --arg var2 value > output.txt
+          `}
           lang="bash"
           theme="css-variables"
         />

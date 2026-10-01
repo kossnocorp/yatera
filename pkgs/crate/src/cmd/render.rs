@@ -15,6 +15,9 @@ pub struct YtrCmdRender {
     /// Variables as name=value strings; override structured context values
     #[usage(required = false)]
     pub arguments: Vec<String>,
+    /// Set a string variable (alias: --arg); overrides context and name=value arguments
+    #[usage(long = "var", visible_alias = "arg", num_args = 2, value_names = ["NAME", "VALUE"])]
+    pub variables: Vec<String>,
     /// Context as a JSON object (choose one context source)
     #[usage(long)]
     pub json: Option<String>,
@@ -144,6 +147,14 @@ impl YtrCmdRender {
             let Some((name, value)) = argument.split_once('=') else {
                 bail!("Invalid variable {argument:?}: expected name=value");
             };
+            ensure!(!name.is_empty(), "Variable names must not be empty");
+            context.insert(name.to_owned(), value);
+        }
+        ensure!(
+            self.variables.len().is_multiple_of(2),
+            "--var/--arg requires NAME VALUE pairs"
+        );
+        for [name, value] in self.variables.as_chunks::<2>().0 {
             ensure!(!name.is_empty(), "Variable names must not be empty");
             context.insert(name.to_owned(), value);
         }

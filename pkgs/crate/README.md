@@ -86,6 +86,14 @@ To provide template variables directly as command-line arguments, use the `name=
 cat template.tera | tera var1=value var2=value > output.txt
 ```
 
+Alternatively, use repeatable `--var NAME VALUE` flags, or the jq-compatible
+`--arg NAME VALUE` alias:
+
+```bash
+cat template.tera | tera --var var1 value --var var2 value > output.txt
+cat template.tera | tera --arg var1 value --arg var2 value > output.txt
+```
+
 #### Variable Files
 
 To read variables from JSON/TOML/YAML files:
@@ -150,15 +158,15 @@ printf '{{ name | snake_case }}' | tera name="Hello World"
 #=> hello_world
 ```
 
-| Filter                                   | Result for `Hello World` |
-| ---------------------------------------- | ------------------------ |
+| Filter                             | Result for `Hello World` |
+| ---------------------------------- | ------------------------ |
 | `upper_camel_case` / `pascal_case` | `HelloWorld`             |
-| `lower_camel_case`                    | `helloWorld`             |
-| `snake_case`                          | `hello_world`            |
-| `kebab_case`                          | `hello-world`            |
-| `shouty_snake_case`                   | `HELLO_WORLD`            |
-| `shouty_kebab_case`                   | `HELLO-WORLD`            |
-| `train_case`                          | `Hello-World`            |
+| `lower_camel_case`                 | `helloWorld`             |
+| `snake_case`                       | `hello_world`            |
+| `kebab_case`                       | `hello-world`            |
+| `shouty_snake_case`                | `HELLO_WORLD`            |
+| `shouty_kebab_case`                | `HELLO-WORLD`            |
+| `train_case`                       | `Hello-World`            |
 
 ## License
 

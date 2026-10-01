@@ -47,6 +47,54 @@ fn renders_strings_and_preserves_output() {
     assert_render("", &[], "");
 }
 
+#[test]
+fn renders_named_variable_flags() {
+    assert_render(
+        "{{ first }}|{{ second }}|{{ empty }}|{{ number is string }}",
+        &[
+            "--var",
+            "first",
+            "Hello World",
+            "--arg",
+            "second",
+            "a=b",
+            "--var",
+            "empty",
+            "",
+            "--arg",
+            "number",
+            "42",
+        ],
+        "Hello World|a=b||true",
+    );
+    assert_render(
+        "{{ name }}|{{ other }}",
+        &[
+            "--json",
+            r#"{"name":"context","other":"kept"}"#,
+            "--var",
+            "name",
+            "first",
+            "name=positional",
+            "--arg",
+            "name",
+            "last",
+        ],
+        "last|kept",
+    );
+    for args in [
+        vec!["--var"],
+        vec!["--arg", "name"],
+        vec!["--var", "", "value"],
+        vec!["--var", "name", "--arg", "other", "value"],
+    ] {
+        let output = render("", &args);
+        assert!(!output.status.success(), "{args:?}");
+        assert!(output.stdout.is_empty());
+        assert!(!output.stderr.is_empty());
+    }
+}
+
 const CONTEXTS: [(&str, &str); 3] = [
     (
         "json",
@@ -235,6 +283,8 @@ fn help_exposes_root_options() {
     assert!(output.status.success());
     let help = String::from_utf8(output.stdout).unwrap();
     for flag in [
+        "--var",
+        "--arg",
         "--json-env",
         "--toml-env",
         "--yaml-env",
