@@ -262,7 +262,7 @@ import { lit } from "smollit";
 
         <Code
           code={lit`
-            printf '{{ name | to_snake_case }}' | tera name="Hello World"
+            printf '{{ name | snake_case }}' | tera name="Hello World"
             #=> hello_world
           `}
           lang="bash"
@@ -279,36 +279,32 @@ import { lit } from "smollit";
           <tbody>
             <tr>
               <td>
-                <code>to_upper_camel_case</code> / <code>to_pascal_case</code>
+                <code>upper_camel_case</code> / <code>pascal_case</code>
               </td>
               <td><code>HelloWorld</code></td>
             </tr>
             <tr>
-              <td><code>to_lower_camel_case</code></td>
+              <td><code>lower_camel_case</code></td>
               <td><code>helloWorld</code></td>
             </tr>
             <tr>
-              <td><code>to_snake_case</code></td>
+              <td><code>snake_case</code></td>
               <td><code>hello_world</code></td>
             </tr>
             <tr>
-              <td><code>to_kebab_case</code></td>
+              <td><code>kebab_case</code></td>
               <td><code>hello-world</code></td>
             </tr>
             <tr>
-              <td><code>to_shouty_snake_case</code></td>
+              <td><code>shouty_snake_case</code></td>
               <td><code>HELLO_WORLD</code></td>
             </tr>
             <tr>
-              <td><code>to_shouty_kebab_case</code></td>
+              <td><code>shouty_kebab_case</code></td>
               <td><code>HELLO-WORLD</code></td>
             </tr>
             <tr>
-              <td><code>to_title_case</code></td>
-              <td><code>Hello World</code></td>
-            </tr>
-            <tr>
-              <td><code>to_train_case</code></td>
+              <td><code>train_case</code></td>
               <td><code>Hello-World</code></td>
             </tr>
           </tbody>

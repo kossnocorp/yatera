@@ -62,15 +62,14 @@ const CONTEXTS: [(&str, &str); 3] = [
 #[test]
 fn renders_heck_case_filters() {
     for (filter, expected) in [
-        ("to_upper_camel_case", "XmlHttpRequest"),
-        ("to_pascal_case", "XmlHttpRequest"),
-        ("to_lower_camel_case", "xmlHttpRequest"),
-        ("to_snake_case", "xml_http_request"),
-        ("to_kebab_case", "xml-http-request"),
-        ("to_shouty_snake_case", "XML_HTTP_REQUEST"),
-        ("to_shouty_kebab_case", "XML-HTTP-REQUEST"),
-        ("to_title_case", "Xml Http Request"),
-        ("to_train_case", "Xml-Http-Request"),
+        ("upper_camel_case", "XmlHttpRequest"),
+        ("pascal_case", "XmlHttpRequest"),
+        ("lower_camel_case", "xmlHttpRequest"),
+        ("snake_case", "xml_http_request"),
+        ("kebab_case", "xml-http-request"),
+        ("shouty_snake_case", "XML_HTTP_REQUEST"),
+        ("shouty_kebab_case", "XML-HTTP-REQUEST"),
+        ("train_case", "Xml-Http-Request"),
     ] {
         assert_render(
             &format!("{{{{ name | {filter} }}}}"),
@@ -80,7 +79,7 @@ fn renders_heck_case_filters() {
         assert_render(&format!("{{{{ name | {filter} }}}}"), &["name="], "");
     }
     assert_render(
-        "{{ name | to_snake_case | upper }}",
+        "{{ name | snake_case | upper }}",
         &["name=Déjà Vu"],
         "DÉJÀ_VU",
     );
@@ -90,7 +89,7 @@ fn renders_heck_case_filters() {
 fn case_filters_reject_non_strings() {
     for value in ["42", "true", "null", "[]", "{}"] {
         let output = render(
-            "before {{ name | to_snake_case }}",
+            "before {{ name | snake_case }}",
             &["--json", &format!(r#"{{"name":{value}}}"#)],
         );
         assert!(!output.status.success(), "accepted {value}");
@@ -261,7 +260,7 @@ fn renders_from_and_to_files_independently() {
     let to = target.to_str().unwrap();
     std::fs::write(
         &source,
-        "export const {{ name | to_snake_case }} = {{ value }};",
+        "export const {{ name | snake_case }} = {{ value }};",
     )
     .unwrap();
     assert_render(

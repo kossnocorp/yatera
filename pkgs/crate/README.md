@@ -146,20 +146,19 @@ Yatera supports all default [Tera built-ins](https://keats.github.io/tera/#built
 [heck](https://crates.io/crates/heck) methods are available as string filters:
 
 ```bash
-printf '{{ name | to_snake_case }}' | tera name="Hello World"
+printf '{{ name | snake_case }}' | tera name="Hello World"
 #=> hello_world
 ```
 
 | Filter                                   | Result for `Hello World` |
 | ---------------------------------------- | ------------------------ |
-| `to_upper_camel_case` / `to_pascal_case` | `HelloWorld`             |
-| `to_lower_camel_case`                    | `helloWorld`             |
-| `to_snake_case`                          | `hello_world`            |
-| `to_kebab_case`                          | `hello-world`            |
-| `to_shouty_snake_case`                   | `HELLO_WORLD`            |
-| `to_shouty_kebab_case`                   | `HELLO-WORLD`            |
-| `to_title_case`                          | `Hello World`            |
-| `to_train_case`                          | `Hello-World`            |
+| `upper_camel_case` / `pascal_case` | `HelloWorld`             |
+| `lower_camel_case`                    | `helloWorld`             |
+| `snake_case`                          | `hello_world`            |
+| `kebab_case`                          | `hello-world`            |
+| `shouty_snake_case`                   | `HELLO_WORLD`            |
+| `shouty_kebab_case`                   | `HELLO-WORLD`            |
+| `train_case`                          | `Hello-World`            |
 
 ## License
 
