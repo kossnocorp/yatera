@@ -7,14 +7,11 @@
   },
   "dependencies": {
     "astro": "7.2.3",
-    "smollit": "^0.3.0"
+    "fyi.party": "workspace:*"
   },
   "devDependencies": {
     "@astrojs/cloudflare": "14.2.1",
-    "@tailwindcss/typography": "^0.5.20",
-    "@tailwindcss/vite": "4.3.3",
-    "@types/node": "^22.20.1",
-    "tailwindcss": "4.2.2",
+    "@types/node": "24",
     "typescript": "^6.0.3",
     "wrangler": "^4.123.0"
   }

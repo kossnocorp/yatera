@@ -1,0 +1,28 @@
+{
+  "name": "fyi.party",
+  "version": "0.0.0",
+  "description": "Markdown-driven Astro docs template",
+  "license": "MIT",
+  "files": [
+    "src",
+    "vendor"
+  ],
+  "type": "module",
+  "exports": {
+    "./Page.astro": "./src/Page.astro"
+  },
+  "dependencies": {
+    "github-slugger": "^2.0.0",
+    "marked": "^17.0.0",
+    "marked-highlight": "^2.2.3",
+    "shiki": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "24",
+    "typescript": "^6.0.3",
+    "vitest": "^5.0.3"
+  },
+  "peerDependencies": {
+    "astro": "^7"
+  }
+}
