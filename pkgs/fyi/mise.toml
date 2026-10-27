@@ -1,0 +1,12 @@
+# Tasks ########################################################################
+
+
+# Typecheck ====================================================================
+
+# typecheck ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+[tasks."typecheck"]
+run = "pnpm exec tsc --noEmit --runExternalCode"
+
+# typecheck:watch ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+[tasks."typecheck:watch"]
+run = "pnpm exec tsc --noEmit --watch --runExternalCode"

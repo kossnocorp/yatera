@@ -1,5 +1,11 @@
 {
   "extends": "astro/tsconfigs/strict",
-  "compilerOptions": { "types": ["node"] },
+  "compilerOptions": { "types": ["node", "astro/client"] },
+  "contentMappers": [
+    {
+      "package": "@astrojs/ts-content-mapper",
+      "extensions": [".astro"]
+    }
+  ],
   "include": ["src/**/*"]
 }

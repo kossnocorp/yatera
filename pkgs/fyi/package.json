@@ -18,8 +18,10 @@
     "shiki": "^4.4.3"
   },
   "devDependencies": {
+    "@astrojs/ts-content-mapper": "0.2.0",
     "@types/node": "24",
-    "typescript": "^6.0.3",
+    "astro": "7.4.2",
+    "typescript": "7.1.0-beta",
     "vitest": "^5.0.3"
   },
   "peerDependencies": {
