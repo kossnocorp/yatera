@@ -14,7 +14,6 @@
   "dependencies": {
     "github-slugger": "^2.0.0",
     "marked": "^17.0.0",
-    "marked-highlight": "^2.2.3",
     "shiki": "^4.4.3"
   },
   "devDependencies": {

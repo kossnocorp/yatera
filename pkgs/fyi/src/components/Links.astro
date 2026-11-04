@@ -1,0 +1,32 @@
+---
+import GitHubIcon from "../../vendor/@http/cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/github/github-original.svg";
+
+export interface Link {
+  label: string;
+  href: string;
+  icon?: "github";
+}
+
+interface Props {
+  links: Link[];
+}
+
+const { links } = Astro.props;
+---
+
+{
+  links.length > 0 && (
+    <nav class="fyi-links" aria-label="Project links">
+      <ul>
+        {links.map(({ label, href, icon }) => (
+          <li>
+            <a href={href}>
+              {icon === "github" && <GitHubIcon class="fyi-icon" aria-hidden="true" />}
+              {label}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  )
+}

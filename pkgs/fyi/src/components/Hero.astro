@@ -1,0 +1,17 @@
+---
+import type { PageSectionHero } from "../renderer/index.ts";
+
+interface Props {
+  section: PageSectionHero;
+}
+
+const { section } = Astro.props;
+---
+
+<section class="fyi-hero fyi-doc">
+  <header class="fyi-hero-heading">
+    <Fragment set:html={section.header} />
+    {section.subheadline && <div class="fyi-hero-subheadline" set:html={section.subheadline} />}
+  </header>
+  {section.description && <div class="fyi-hero-description" set:html={section.description} />}
+</section>

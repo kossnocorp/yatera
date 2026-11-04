@@ -1,0 +1,11 @@
+---
+import type { PageSectionDoc, PageSectionLicense } from "../renderer/index.ts";
+
+interface Props {
+  section: PageSectionDoc | PageSectionLicense;
+}
+
+const { section } = Astro.props;
+---
+
+<div class="fyi-doc" set:html={section.html} />

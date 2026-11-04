@@ -1,6 +1,10 @@
 ---
-import Page from "fyi.party/Page.astro";
+import Page, { type PageProps } from "fyi.party/Page.astro";
 import readme from "../../../crate/README.md?raw";
+
+export interface Hello extends PageProps {
+  hi: true;
+}
 
 export const prerender = true;
 ---
@@ -17,4 +21,8 @@ export const prerender = true;
     },
   ]}
   markdown={readme}
+  parseHero
+  parseLicense
+  parseInstallation
+  displayLicenseInFooter
 />

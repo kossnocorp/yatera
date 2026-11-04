@@ -1,0 +1,141 @@
+---
+import type { PageSectionInstallation } from "../renderer/index.ts";
+
+interface Props {
+  section: PageSectionInstallation;
+}
+
+const { section } = Astro.props;
+// A colon cannot occur in a GitHub heading slug, keeping panel IDs distinct.
+const panelId = (id: string) => `fyi-panel:${id}`;
+---
+
+<fyi-installation class="fyi-installation fyi-doc">
+  <div set:html={section.html} />
+  {
+    section.tabs.length > 0 && (
+      <>
+        <div class="fyi-tabs" role="tablist" aria-label={section.label}>
+          {section.tabs.map((tab, index) => (
+            <button
+              type="button"
+              role="tab"
+              id={tab.id}
+              aria-controls={panelId(tab.id)}
+              aria-selected={index === 0 ? "true" : "false"}
+              tabindex={index === 0 ? 0 : -1}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {section.tabs.map((tab, index) => (
+          <div
+            class="fyi-tab-panel"
+            role="tabpanel"
+            id={panelId(tab.id)}
+            aria-labelledby={tab.id}
+            tabindex="0"
+            hidden={index !== 0}
+            set:html={tab.html}
+          />
+        ))}
+      </>
+    )
+  }
+</fyi-installation>
+
+<script>
+  class Installation extends HTMLElement {
+    connectedCallback() {
+      const tabs = Array.from(
+        this.querySelectorAll<HTMLButtonElement>('[role="tab"]'),
+      );
+      const panels = Array.from(
+        this.querySelectorAll<HTMLElement>('[role="tabpanel"]'),
+      );
+      if (!tabs.length) return;
+
+      const activate = (index: number, focus = false) => {
+        tabs.forEach((tab, position) => {
+          const selected = position === index;
+          tab.setAttribute("aria-selected", String(selected));
+          tab.tabIndex = selected ? 0 : -1;
+          panels[position]!.hidden = !selected;
+        });
+        if (focus) tabs[index]!.focus({ preventScroll: true });
+      };
+
+      const select = (index: number, focus = false) => {
+        activate(index, focus);
+        const hash = `#${encodeURIComponent(tabs[index]!.id)}`;
+        if (location.hash !== hash) {
+          history.pushState(history.state, "", hash);
+        }
+      };
+
+      const controller = new AbortController();
+      this.controller?.abort();
+      this.controller = controller;
+      const { signal } = controller;
+      tabs.forEach((tab, index) => {
+        tab.addEventListener("click", () => select(index), { signal });
+        tab.addEventListener(
+          "keydown",
+          (event) => {
+            let next: number;
+            switch (event.key) {
+              case "ArrowRight":
+                next = (index + 1) % tabs.length;
+                break;
+              case "ArrowLeft":
+                next = (index - 1 + tabs.length) % tabs.length;
+                break;
+              case "Home":
+                next = 0;
+                break;
+              case "End":
+                next = tabs.length - 1;
+                break;
+              default:
+                return;
+            }
+            event.preventDefault();
+            select(next, true);
+          },
+          { signal },
+        );
+      });
+
+      const followHash = () => {
+        let id: string;
+        try {
+          id = decodeURIComponent(location.hash.slice(1));
+        } catch {
+          return;
+        }
+        const target = document.getElementById(id);
+        if (!target) return;
+        const index = tabs.findIndex(
+          (tab, index) => tab === target || panels[index]!.contains(target),
+        );
+        if (index < 0) return;
+        activate(index);
+        target.scrollIntoView();
+      };
+      window.addEventListener("hashchange", followHash, { signal });
+      followHash();
+    }
+
+    private controller?: AbortController;
+
+    disconnectedCallback() {
+      this.controller?.abort();
+    }
+  }
+
+  if (!customElements.get("fyi-installation")) {
+    customElements.define("fyi-installation", Installation);
+  }
+</script>

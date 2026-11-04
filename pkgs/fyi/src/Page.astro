@@ -1,14 +1,21 @@
 ---
-import { renderDoc } from "./renderer/index.ts";
-import GitHubIcon from "../vendor/@http/cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/github/github-original.svg";
+import { parseDoc, type ParserOptions } from "./parser/index.ts";
+import { renderDoc, type DisplayOptions } from "./renderer/index.ts";
+import Hero from "./components/Hero.astro";
+import Links, { type Link } from "./components/Links.astro";
+import Doc from "./components/Doc.astro";
+import Footer from "./components/Footer.astro";
+import Installation from "./components/Installation.astro";
 import "./styles.css";
 
-interface Props {
+type Props = PageProps;
+
+export interface PageProps extends ParserOptions, DisplayOptions {
   title?: string;
   description?: string;
   lang?: string;
   favicon?: string;
-  links?: { label: string; href: string; icon?: "github" }[];
+  links?: Link[];
   markdown: string;
 }
 
@@ -19,11 +26,21 @@ const {
   favicon,
   links = [],
   markdown,
+  parseHero,
+  parseLicense,
+  parseInstallation,
+  displayLicenseInFooter,
 } = Astro.props;
 
 const canonical = Astro.site && new URL(Astro.url.pathname, Astro.site);
 
-const doc = await renderDoc(markdown);
+const parsed = await parseDoc(markdown, { parseHero, parseLicense, parseInstallation });
+const doc = await renderDoc(parsed, { displayLicenseInFooter });
+const footerSections = displayLicenseInFooter
+  ? doc.sections.filter((section) => section.kind === "license")
+  : [];
+const mainSections = doc.sections.filter((section) => !displayLicenseInFooter || section.kind !== "license");
+const hasHero = doc.sections.some((section) => section.kind === "hero");
 
 const title = titleProp ?? doc.title ?? "Documentation";
 ---
@@ -37,37 +54,42 @@ const title = titleProp ?? doc.title ?? "Documentation";
     <title>{title}</title>
     {description && <meta name="description" content={description} />}
     {canonical && <link rel="canonical" href={canonical} />}
-    {favicon && <link rel="icon" href={favicon} />}
+    {
+      Astro.slots.has("favicon") ? (
+        <slot name="favicon" />
+      ) : (
+        favicon && <link rel="icon" href={favicon} />
+      )
+    }
     <slot name="head" />
   </head>
   <body class="fyi-body">
     <div class="fyi-page">
-      {
-        links.length > 0 && (
-          <nav class="fyi-links" aria-label="Project links">
-            <ul>
-              {links.map(({ label, href, icon }) => (
-                <li>
-                  <a href={href}>
-                    {icon === "github" && (
-                      <GitHubIcon class="fyi-icon" aria-hidden="true" />
-                    )}
-                    {label}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </nav>
-        )
-      }
+      {!hasHero && <Links links={links} />}
 
-      <main class="fyi-doc" set:html={doc.html} />
+      <main>
+        {
+          mainSections.map((section) =>
+            section.kind === "hero" ? (
+              <>
+                <Hero section={section} />
+                <Links links={links} />
+              </>
+            ) : section.kind === "installation" ? (
+              <Installation section={section} />
+            ) : (
+              <Doc section={section} />
+            ),
+          )
+        }
+      </main>
 
       {
-        Astro.slots.has("footer") && (
-          <footer>
+        (footerSections.length > 0 || Astro.slots.has("footer")) && (
+          <Footer>
+            {footerSections.map((section) => <Doc section={section} />)}
             <slot name="footer" />
-          </footer>
+          </Footer>
         )
       }
     </div>

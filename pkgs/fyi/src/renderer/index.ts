@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
+import { parseDoc, textContent, type ParsedDocument, type ParserOptions } from "../parser/index.ts";
 import GithubSlugger from "github-slugger";
 import { Marked, type RendererObject, type Token } from "marked";
-import { markedHighlight } from "marked-highlight";
 import {
   createHighlighter,
   bundledLanguages,
@@ -14,29 +14,49 @@ const theme = createCssVariablesTheme({ variablePrefix: "--astro-code-" });
 let highlighter: ReturnType<typeof createHighlighter> | undefined;
 
 export interface Document {
-  html: string;
+  sections: PageSection[];
   title?: string;
   headings: { depth: number; slug: string; text: string }[];
 }
 
-function textContent(tokens: Token[]): string {
-  return tokens
-    .map((token) => {
-      if ("tokens" in token && token.tokens) return textContent(token.tokens);
-      if (token.type === "html") return "";
-      return "text" in token ? token.text : "";
-    })
-    .join("");
+export interface DisplayOptions {
+  displayLicenseInFooter?: boolean;
 }
+
+export interface RendererOptions extends DisplayOptions {}
+
+export interface PageSectionBase<Kind extends string> {
+  kind: Kind;
+  html: string;
+}
+
+export interface PageSectionDoc extends PageSectionBase<"doc"> {}
+export interface PageSectionHero extends PageSectionBase<"hero"> {
+  header: string;
+  subheadline: string;
+  description: string;
+}
+export interface PageSectionLicense extends PageSectionBase<"license"> {}
+export interface PageSectionInstallation extends PageSectionBase<"installation"> {
+  id: string;
+  label: string;
+  tabs: { id: string; label: string; html: string }[];
+}
+export type PageSection =
+  | PageSectionDoc
+  | PageSectionHero
+  | PageSectionLicense
+  | PageSectionInstallation;
 
 /**
  * Render repository Markdown with heading anchors, GFM, and highlighted code.
  */
-export async function renderDoc(markdown: string): Promise<Document> {
+export async function renderDoc(
+  parsed: ParsedDocument,
+  options: RendererOptions = {},
+): Promise<Document> {
   const headings: Document["headings"] = [];
   const slugger = new GithubSlugger();
-
-  const markedExtension = markedHighlight({ async: true, highlight });
 
   const renderer: RendererObject = {
     heading({ tokens, depth }) {
@@ -53,13 +73,64 @@ export async function renderDoc(markdown: string): Promise<Document> {
     },
   };
 
-  const processor = new Marked(markedExtension, { gfm: true, renderer });
-  const html = await processor.parse(markdown, { async: true });
+  const processor = new Marked({ gfm: true, renderer });
+  async function renderTokens(source: Token[]): Promise<string> {
+    // Highlight a copy so the parsed document can be rendered more than once.
+    const tokens = structuredClone(source);
+    await Promise.all(
+      processor.walkTokens(tokens, async (token) => {
+        if (token.type === "code") {
+          token.text = await highlight(token.text, token.lang?.split(/\s+/)[0] ?? "text");
+        }
+      }),
+    );
+    return processor.parser(tokens);
+  }
+
+  const sections: PageSection[] = [];
+  for (const section of parsed.sections) {
+    if (section.kind === "hero") {
+      const header = await renderTokens(section.header);
+      const subheadline = await renderTokens(section.subheadline);
+      const description = await renderTokens(section.description);
+      sections.push({
+        kind: "hero",
+        header,
+        subheadline,
+        description,
+        html: header + subheadline + description,
+      });
+    } else if (section.kind === "installation") {
+      const headerIndex = headings.length;
+      const header = await renderTokens(section.header);
+      const heading = headings[headerIndex]!;
+      const html = header + (await renderTokens(section.content));
+      const tabs: PageSectionInstallation["tabs"] = [];
+      for (const tab of section.tabs) {
+        // Reserve the original heading slug in document order for tab links.
+        const tabIndex = headings.length;
+        await renderTokens(tab.header);
+        const tabHeading = headings[tabIndex]!;
+        tabs.push({
+          id: tabHeading.slug,
+          label: tabHeading.text,
+          html: await renderTokens(tab.content),
+        });
+      }
+      sections.push({ kind: "installation", id: heading.slug, label: heading.text, html, tabs });
+    } else {
+      const tokens =
+        section.kind === "license"
+          ? [...(options.displayLicenseInFooter ? [] : section.header), ...section.content]
+          : section.tokens;
+      sections.push({ kind: section.kind, html: await renderTokens(tokens) });
+    }
+  }
 
   const title = headings.find((heading) => heading.depth === 1)?.text;
 
   return {
-    html,
+    sections,
     title,
     headings,
   };
@@ -85,6 +156,9 @@ async function highlight(code: string, language: string): Promise<string> {
 /**
  * Read a local README at build time.
  */
-export async function readDoc(path: string | URL): Promise<Document> {
-  return renderDoc(await readFile(path, "utf8"));
+export async function readDoc(
+  path: string | URL,
+  options?: ParserOptions & RendererOptions,
+): Promise<Document> {
+  return renderDoc(await parseDoc(await readFile(path, "utf8"), options), options);
 }
