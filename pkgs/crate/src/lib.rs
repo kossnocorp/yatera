@@ -45,6 +45,7 @@ pub fn render_with_context(template: &str, context: &Context) -> Result<String, 
 
 /// Render with Lua plugin sources, evaluated in order in a fresh runtime.
 /// Plugins define `yatera.filters`, `yatera.functions`, and `yatera.tests` entries.
+/// Values in `yatera.context` override matching input keys before rendering.
 /// See the crate README for the Lua API and value conversion rules.
 pub fn render_with_plugins<V: Serialize, S: BuildHasher>(
     template: &str,
@@ -62,6 +63,7 @@ pub fn render_with_context_and_plugins(
 ) -> Result<String, Error> {
     let mut tera = Tera::default();
     filters::register_filters(&mut tera);
-    let _runtime = plugins::register(&mut tera, context, &plugins)?;
-    tera.render_str(template, context, false)
+    let mut context = context.clone();
+    let _runtime = plugins::register(&mut tera, &mut context, &plugins)?;
+    tera.render_str(template, &context, false)
 }

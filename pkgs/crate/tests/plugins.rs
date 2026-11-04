@@ -2,6 +2,59 @@ use serde_json::json;
 use std::collections::HashMap;
 use yatera::render_with_plugins;
 
+#[test]
+fn merges_plugin_context_with_input_in_order() {
+    let mut context = yatera::Context::new();
+    context.insert("home", "/home/test");
+    context.insert("ssh_agent", "none");
+    context.insert("kept", "from JSON");
+    context.insert("env", &json!({"OLD": "replaced"}));
+    context.insert("name", "original");
+    let original = context.clone();
+    let first = r#"
+        local home = yatera.get("home")
+        local ssh_agent = yatera.get("ssh_agent")
+        yatera.context.env = { HOME = home }
+        yatera.context.mise_env = ssh_agent == "none" and "" or ssh_agent
+        yatera.context.name = "override"
+        yatera.context.flag = false
+        yatera.context.nothing = yatera.null
+        yatera.context.items = {1, 2}
+    "#;
+    let second = r#"
+        assert(yatera.get("name") == "override")
+        assert(yatera.get("flag") == false)
+        assert(yatera.get("nothing") == yatera.null)
+        assert(yatera.context.env.OLD == nil)
+        yatera.context.name = yatera.get("name") .. "!"
+    "#;
+    let output = yatera::render_with_context_and_plugins(
+        "{{ env.HOME }}|{{ mise_env }}|{{ kept }}|{{ name }}|{{ flag }}|{{ items | length }}",
+        &context,
+        vec![first.to_owned(), second.to_owned()],
+    )
+    .unwrap();
+    assert_eq!(output, "/home/test||from JSON|override!|false|2");
+    assert_eq!(context, original);
+}
+
+#[test]
+fn rejects_invalid_plugin_context() {
+    for plugin in [
+        "yatera.context = 42",
+        "yatera.context = {1, 2}",
+        "yatera.context.bad = function() end",
+        "yatera.context.self = yatera.context",
+    ] {
+        assert!(
+            render("hello", &[plugin])
+                .unwrap_err()
+                .to_string()
+                .contains("context")
+        );
+    }
+}
+
 fn render(source: &str, plugins: &[&str]) -> Result<String, yatera::Error> {
     render_with_plugins(
         source,

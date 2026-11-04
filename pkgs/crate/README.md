@@ -185,12 +185,31 @@ end
 - `yatera.functions.NAME(args)`: receives named arguments.
 - `yatera.tests.NAME(value, args)`: receives the tested value and named arguments;
   must return a boolean.
-- `yatera.get("name")`: reads an original render-input variable, or `nil` if absent.
+- `yatera.context`: a table of additional template variables, merged into the input
+  after all plugins load and before rendering. Lua values override matching
+  top-level input keys (nested objects are replaced, not deep-merged). Plugins
+  share this table in load order. Changes inside filters/functions happen after
+  this merge and do not update the template context.
+- `yatera.get("name")`: reads `yatera.context` first, then the original render input,
+  or `nil` if absent.
   This includes CLI variable overrides, but not Tera loop variables or `{% set %}`
   assignments. Pass those as filter values or named arguments instead.
 - `yatera.null`: represents an explicit JSON null, including within arrays/objects.
 - Lua helpers include `pairs`, `ipairs`, `tostring`, `tonumber`, `assert`, `error`,
   and the runtime's `string`, `table`, and `math` libraries.
+
+For example, add variables alongside the playground's JSON input:
+
+```lua
+local home = yatera.get("home") or "/home/me"
+local ssh_agent = yatera.get("ssh_agent") or "none"
+
+yatera.context.env = { HOME = home }
+yatera.context.mise_env = ssh_agent == "none" and "" or ssh_agent
+```
+
+The template can then use `{{ env.HOME }}` and `{{ mise_env }}`. The caller's
+original Rust context is not modified.
 
 Yatera embeds [Piccolo](https://github.com/kyren/piccolo), a pure-Rust Lua runtime,
 on both native and WebAssembly targets. Its core standard library is available;

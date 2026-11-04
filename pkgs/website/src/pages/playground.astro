@@ -17,6 +17,13 @@ const pluginPlaceholder = `-- Optional Lua plugin. This example is not executed.
 -- Lua helpers include string.upper, table.pack,
 -- pairs, ipairs, tostring, tonumber, math, assert, error.
 
+-- Add template variables (overrides matching JSON keys):
+-- {{ env.HOME }} / {{ mise_env }}
+local home = yatera.get("home") or "/home/me"
+local ssh_agent = yatera.get("ssh_agent") or "none"
+yatera.context.env = { HOME = home }
+yatera.context.mise_env = ssh_agent == "none" and "" or ssh_agent
+
 -- {{ name | greet(prefix="Hi") }}
 yatera.filters.greet = function(value, args)
   return (args.prefix or "Hello") .. ", " .. value .. "!"

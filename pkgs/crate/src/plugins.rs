@@ -147,7 +147,7 @@ fn from_lua<'gc>(
 
 pub(crate) fn register(
     tera: &mut Tera,
-    context: &Context,
+    context: &mut Context,
     sources: &[String],
 ) -> Result<Option<Runtime>, Error> {
     if sources.is_empty() {
@@ -156,7 +156,7 @@ pub(crate) fn register(
     let mut lua = Lua::core();
     lua.enter(|ctx| -> Result<(), Error> {
         let api = Table::new(&ctx);
-        for name in ["filters", "functions", "tests", "null"] {
+        for name in ["filters", "functions", "tests", "null", "context"] {
             api.set(ctx, name, Table::new(&ctx)).map_err(error)?;
         }
         let context = context.clone();
@@ -165,6 +165,14 @@ pub(crate) fn register(
             "get",
             piccolo::Callback::from_fn(&ctx, move |ctx, _, mut stack| {
                 let name: String = stack.consume(ctx)?;
+                let overrides = table(ctx.get_global("yatera"))
+                    .and_then(|api| table(api.get(ctx, "context")))
+                    .map_err(|err| piccolo::Error::from(anyhow::anyhow!(err.to_string())))?;
+                let value = overrides.get(ctx, ctx.intern(name.as_bytes()));
+                if !value.is_nil() {
+                    stack.replace(ctx, value);
+                    return Ok(piccolo::CallbackReturn::Return);
+                }
                 let value = context
                     .get(&name)
                     .map(serde_json::to_value)
@@ -220,6 +228,14 @@ pub(crate) fn register(
         }
         Ok(exports)
     })?;
+    let additions = lua
+        .enter(|ctx| {
+            let api = table(ctx.get_global("yatera"))?;
+            let additions = from_lua(ctx, LuaValue::Table(table(api.get(ctx, "context"))?), 0)?;
+            Context::from_serialize(&additions)
+        })
+        .map_err(|err| error(format!("context: {err}")))?;
+    context.extend(additions);
     let slot = RUNTIMES.with_borrow_mut(|runtimes| {
         let slot = runtimes
             .iter()
