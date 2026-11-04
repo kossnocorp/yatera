@@ -48,6 +48,49 @@ fn renders_strings_and_preserves_output() {
 }
 
 #[test]
+fn loads_repeated_lua_plugins_in_order() {
+    let dir = tempfile::tempdir().unwrap();
+    let first = dir.path().join("first.lua");
+    let second = dir.path().join("second.lua");
+    std::fs::write(&first, "prefix = yatera.get('prefix')").unwrap();
+    std::fs::write(
+        &second,
+        "yatera.filters.greet = function(value, args) return prefix .. value end",
+    )
+    .unwrap();
+    assert_render(
+        "{{ name | greet }}",
+        &[
+            "--plugin",
+            first.to_str().unwrap(),
+            "--plugin",
+            second.to_str().unwrap(),
+            "--json",
+            r#"{"prefix":"Hello ","name":"World"}"#,
+        ],
+        "Hello World",
+    );
+
+    let output = dir.path().join("output.txt");
+    std::fs::write(&output, "preserved").unwrap();
+    for path in [&first, &dir.path().join("missing.lua")] {
+        std::fs::write(&first, "error('plugin failed')").unwrap();
+        let result = render(
+            "hello",
+            &[
+                "--plugin",
+                path.to_str().unwrap(),
+                "--out-file",
+                output.to_str().unwrap(),
+            ],
+        );
+        assert!(!result.status.success());
+        assert!(result.stdout.is_empty());
+        assert_eq!(std::fs::read_to_string(&output).unwrap(), "preserved");
+    }
+}
+
+#[test]
 fn renders_named_variable_flags() {
     assert_render(
         "{{ first }}|{{ second }}|{{ empty }}|{{ number is string }}",

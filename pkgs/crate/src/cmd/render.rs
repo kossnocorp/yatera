@@ -12,6 +12,9 @@ pub struct YtrCmdRender {
     /// Write the rendered result to a file instead of stdout (overwrites existing files)
     #[usage(long)]
     pub out_file: Option<PathBuf>,
+    /// Load a Lua plugin file (repeat for multiple plugins; evaluated in order)
+    #[usage(long = "plugin")]
+    pub plugins: Vec<PathBuf>,
     /// Variables as name=value strings; override structured context values
     #[usage(required = false)]
     pub arguments: Vec<String>,
@@ -62,12 +65,18 @@ impl Run for YtrCmdRender {
                 .context("Failed to read template from stdin")?;
             template
         };
-        let rendered =
-            yatera::render_with_context(&template, &context).with_context(|| {
-                match &self.in_file {
-                    Some(path) => format!("Failed to render template file {}", path.display()),
-                    None => "Failed to render template from stdin".to_owned(),
-                }
+        let plugins = self
+            .plugins
+            .iter()
+            .map(|path| {
+                std::fs::read_to_string(path)
+                    .with_context(|| format!("Failed to read Lua plugin {}", path.display()))
+            })
+            .collect::<Result<Vec<_>>>()?;
+        let rendered = yatera::render_with_context_and_plugins(&template, &context, plugins)
+            .with_context(|| match &self.in_file {
+                Some(path) => format!("Failed to render template file {}", path.display()),
+                None => "Failed to render template from stdin".to_owned(),
             })?;
         if let Some(path) = &self.out_file {
             return std::fs::write(path, rendered).with_context(|| {

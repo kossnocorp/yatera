@@ -6,7 +6,7 @@
 # dev ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 [tasks.dev]
 run = "pnpm exec astro dev --host 0.0.0.0"
-depends = "gen/types"
+depends = ["gen/types", "//pkgs/wasm.crate:build:dev"]
 
 
 # Typecheck ====================================================================
@@ -25,7 +25,7 @@ run = "pnpm exec tsc --noEmit --watch --runExternalCode"
 # build ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 [tasks.build]
 run = "pnpm exec astro build"
-depends = "gen/types"
+depends = ["gen/types", "//pkgs/wasm.crate:build"]
 
 
 # Deploy =======================================================================

@@ -139,10 +139,7 @@ url_api = "https://api.github.com/repos/orhun/git-cliff/releases/assets/34338002
 [[tools.node]]
 version = "24.21.0"
 backend = "core:node"
-specifiers = [
-    "24",
-    "lts",
-]
+specifiers = ["24"]
 
 [tools.node."platforms.linux-arm64"]
 checksum = "sha256:724282c3b43aec998aa9527380465b45d229e021b58035f5f4f63095eabfe5d5"
@@ -226,6 +223,7 @@ specifiers = ["stable"]
 
 [tools.rust.options]
 components = "clippy,rustfmt"
+targets = "wasm32-unknown-unknown"
 
 [[tools.sccache]]
 version = "0.17.0"

@@ -20,6 +20,7 @@ shfmt = "latest"
 git-cliff = "latest" # Change log generator
 sccache = "latest" # Rust compiler cache
 fnox = "latest" # Secrets
+# "aqua:wasm-bindgen/wasm-pack" = "latest"
 
 
 # Settings #####################################################################

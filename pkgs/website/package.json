@@ -6,6 +6,7 @@
     "#/*": "./src/*"
   },
   "dependencies": {
+    "@yatera.fyi/wasm": "workspace:*",
     "astro": "7.4.2",
     "fyi.party": "workspace:*"
   },

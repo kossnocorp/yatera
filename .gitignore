@@ -1,5 +1,7 @@
 # Rust
 /target/
+/pkgs/wasm.npm/*
+!/pkgs/wasm.npm/package.json
 
 # Node.js
 node_modules/

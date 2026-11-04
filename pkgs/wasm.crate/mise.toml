@@ -1,0 +1,28 @@
+[tools]
+"cargo:wasm-pack" = "latest"
+"cargo:wasm-bindgen-cli" = "latest"
+"jaq" = "latest"
+
+[tasks.build]
+description = "Build the browser Wasm npm package"
+usage = '''
+flag "--dev" help="Build in dev mode"
+'''
+run = '''
+#!/usr/bin/env bash
+set -euo pipefail
+
+build_args=()
+if [ "${usage_dev:-false}" = "true" ]; then
+  build_args+=(--dev)
+fi
+
+wasm-pack build . "${build_args[@]}" --target web --out-dir ../wasm.npm --out-name index
+jaq '.name = "@yatera.fyi/wasm"' ../wasm.npm/package.json > ../wasm.npm/package.json.tmp
+mv ../wasm.npm/package.json.tmp ../wasm.npm/package.json
+rm ../wasm.npm/.gitignore
+'''
+
+[tasks."build:dev"]
+description = "Build the browser Wasm npm package in dev mode"
+run = [{ task = "build", args = ["--dev"] }]

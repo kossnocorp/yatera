@@ -1,0 +1,223 @@
+---
+export const prerender = true;
+
+const source = `Hello, {{ name }}!
+
+{% for project in projects %}
+- {{ project }} → {{ project | snake_case }}
+{% endfor %}`;
+const input = JSON.stringify(
+  { name: "World", projects: ["Yatera Playground", "Hello Wasm"] },
+  null,
+  2,
+);
+const pluginPlaceholder = `-- Optional Lua plugin. This example is not executed.
+-- Read original input: yatera.get("name")
+-- JSON arrays use 1-based indices; null is yatera.null.
+-- Lua helpers include string.upper, table.pack,
+-- pairs, ipairs, tostring, tonumber, math, assert, error.
+
+-- {{ name | greet(prefix="Hi") }}
+yatera.filters.greet = function(value, args)
+  return (args.prefix or "Hello") .. ", " .. value .. "!"
+end
+
+-- {{ project_names() }}
+yatera.functions.project_names = function(args)
+  local names = ""
+  for i, name in ipairs(yatera.get("projects") or {}) do
+    if i > 1 then names = names .. ", " end
+    names = names .. string.upper(name)
+  end
+  return names
+end
+
+-- {% if name is long(min=3) %}...{% endif %}
+yatera.tests.long = function(value, args)
+  return #value >= (args.min or 3)
+end`;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Playground — Yatera</title>
+    <meta name="description" content="Try Yatera templates in your browser with WebAssembly." />
+    <link rel="icon" href="/favicon.svg" />
+    <link rel="canonical" href={new URL("/playground", Astro.site)} />
+  </head>
+  <body>
+    <header>
+      <div><a href="/">Yatera</a><span> / Playground</span></div>
+      <a href="https://github.com/kossnocorp/yatera">GitHub ↗</a>
+    </header>
+    <main>
+      <div class="intro">
+        <h1>Try a template.</h1>
+        <p>Edit the source and JSON input to render with Yatera, right in your browser.</p>
+        <button id="clear" type="button">Clear</button>
+      </div>
+      <div class="panes">
+        <section>
+          <label for="source">Source code <span>Tera</span></label>
+          <textarea id="source" spellcheck="false" autocapitalize="off" autocomplete="off" aria-describedby="status">{source}</textarea>
+        </section>
+        <section>
+          <div class="input-heading">Input</div>
+          <div role="tablist" aria-label="Input type">
+            <button id="input-tab" role="tab" aria-selected="true" aria-controls="input">JSON</button>
+            <button id="plugin-tab" role="tab" aria-selected="false" aria-controls="plugin" tabindex="-1">Lua plugin</button>
+          </div>
+          <textarea id="input" role="tabpanel" aria-labelledby="input-tab" spellcheck="false" autocapitalize="off" autocomplete="off" aria-describedby="status">{input}</textarea>
+          <textarea id="plugin" role="tabpanel" aria-labelledby="plugin-tab" hidden placeholder={pluginPlaceholder} spellcheck="false" autocapitalize="off" autocomplete="off" aria-describedby="status"></textarea>
+        </section>
+        <section>
+          <label for="output">Output <span>Plain text</span></label>
+          <textarea id="output" readonly spellcheck="false" aria-describedby="status"></textarea>
+        </section>
+      </div>
+      <p id="status" role="status" aria-live="polite">Loading WebAssembly…</p>
+      <noscript>Enable JavaScript to use the playground.</noscript>
+    </main>
+  </body>
+</html>
+
+<script>
+  import init, { render_with_plugins } from "@yatera.fyi/wasm";
+  import wasmUrl from "@yatera.fyi/wasm/index_bg.wasm?url";
+
+  const source = document.querySelector<HTMLTextAreaElement>("#source")!;
+  const input = document.querySelector<HTMLTextAreaElement>("#input")!;
+  const plugin = document.querySelector<HTMLTextAreaElement>("#plugin")!;
+  const output = document.querySelector<HTMLTextAreaElement>("#output")!;
+  const status = document.querySelector<HTMLParagraphElement>("#status")!;
+  const editors = [source, input, plugin];
+  const storageKey = "yatera.playground.v1";
+  let ready = false;
+  let timeout: ReturnType<typeof setTimeout>;
+
+  try {
+    const saved = JSON.parse(localStorage.getItem(storageKey) ?? "null");
+    if (saved && typeof saved === "object") {
+      for (const editor of editors) {
+        if (typeof saved[editor.id] === "string") editor.value = saved[editor.id];
+      }
+    }
+  } catch {
+    // Keep the initial values if storage is unavailable or contains invalid JSON.
+  }
+
+  function save() {
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(Object.fromEntries(
+        editors.map((editor) => [editor.id, editor.value]),
+      )));
+    } catch {
+      // Editing still works when storage is unavailable or full.
+    }
+  }
+
+  for (const editor of editors) {
+    editor.addEventListener("input", () => {
+      save();
+      clearTimeout(timeout);
+      if (ready) timeout = setTimeout(update, 150);
+    });
+  }
+
+  document.querySelector<HTMLButtonElement>("#clear")!.addEventListener("click", () => {
+    clearTimeout(timeout);
+    for (const editor of editors) editor.value = "";
+    output.value = "";
+    status.textContent = "";
+    status.dataset.error = "false";
+    save();
+    source.focus();
+  });
+
+  const tabs = Array.from(document.querySelectorAll<HTMLButtonElement>('[role="tab"]'));
+  function selectTab(selected: HTMLButtonElement) {
+    for (const tab of tabs) {
+      const active = tab === selected;
+      tab.setAttribute("aria-selected", String(active));
+      tab.tabIndex = active ? 0 : -1;
+      document.getElementById(tab.getAttribute("aria-controls")!)!.hidden = !active;
+    }
+  }
+  for (const [index, tab] of tabs.entries()) {
+    tab.addEventListener("click", () => selectTab(tab));
+    tab.addEventListener("keydown", (event) => {
+      if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+      event.preventDefault();
+      const next = event.key === "Home" ? tabs[0]! : event.key === "End" ? tabs[tabs.length - 1]! : tabs[(index + 1) % tabs.length]!;
+      selectTab(next);
+      next.focus();
+    });
+  }
+
+  function update() {
+    if (editors.every((editor) => editor.value === "")) {
+      output.value = "";
+      status.textContent = "";
+      status.dataset.error = "false";
+      return;
+    }
+    try {
+      output.value = render_with_plugins(source.value, input.value, plugin.value.trim() ? [plugin.value] : []);
+      status.textContent = "Rendered locally with Yatera · Your input stays in this browser.";
+      status.dataset.error = "false";
+    } catch (error) {
+      output.value = "";
+      status.textContent = error instanceof Error ? error.message : String(error);
+      status.dataset.error = "true";
+    }
+  }
+
+  try {
+    await init({ module_or_path: wasmUrl });
+    ready = true;
+    update();
+  } catch (error) {
+    status.textContent = `Could not load WebAssembly. Reload to try again. ${String(error)}`;
+    status.dataset.error = "true";
+  }
+</script>
+
+<style>
+  :global(*) { box-sizing: border-box; }
+  :global(html) { color-scheme: light dark; }
+  :global(body) {
+    margin: 0;
+    background: light-dark(#faf9f6, #171816);
+    color: light-dark(#252922, #e5e8de);
+    font-family: system-ui, sans-serif;
+  }
+  header { display: flex; justify-content: space-between; padding: 1.5rem 2rem; border-bottom: 1px solid light-dark(#dcded6, #3b4036); }
+  a { color: inherit; text-underline-offset: 0.2em; }
+  header div a { font-weight: 750; }
+  header span, .intro p, #status { color: light-dark(#5e6657, #b1b9a8); }
+  main { max-width: 1800px; margin: auto; padding: 2rem; }
+  h1 { font-size: 2rem; margin: 0; letter-spacing: -0.04em; }
+  .intro p { line-height: 1.6; margin: 0.75rem 0 2rem; }
+  #clear { margin: 0 0 1rem; padding: 0.5rem 1rem; border: 1px solid light-dark(#cdd2c5, #484e41); border-radius: 0.35rem; background: light-dark(#e9eddf, #2c3325); color: inherit; font: inherit; cursor: pointer; }
+  .panes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
+  section { display: flex; flex-direction: column; overflow: hidden; border: 1px solid light-dark(#cdd2c5, #484e41); border-radius: 0.5rem; }
+  label, .input-heading { padding: 0.85rem 1rem; font-weight: 650; background: light-dark(#e9eddf, #2c3325); display: flex; justify-content: space-between; gap: 1rem; }
+  [role="tablist"] { display: flex; background: light-dark(#e9eddf, #2c3325); }
+  [role="tab"] { padding: 0.5rem 1rem; border: 0; border-bottom: 2px solid transparent; background: transparent; color: inherit; cursor: pointer; font: inherit; font-size: 0.85rem; }
+  [role="tab"][aria-selected="true"] { border-bottom-color: light-dark(#648536, #accc7b); font-weight: 650; }
+  textarea[hidden] { display: none; }
+  textarea::placeholder { color: light-dark(#777f70, #939d88); opacity: 1; }
+  label span { font-weight: 400; font-size: 0.8rem; align-self: center; }
+  textarea { width: 100%; min-height: 55vh; flex: 1; resize: vertical; border: 0; border-radius: 0; padding: 1rem; background: light-dark(#fff, #1e211b); color: inherit; font: 0.9rem/1.65 ui-monospace, SFMono-Regular, Consolas, monospace; tab-size: 2; }
+  textarea:focus-visible { outline: 2px solid light-dark(#648536, #accc7b); outline-offset: -2px; }
+  #status { font-size: 0.875rem; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; }
+  #status[data-error="true"] { color: light-dark(#ae2727, #ffa0a0); }
+  @media (max-width: 850px) {
+    header, main { padding: 1.25rem; }
+    .panes { grid-template-columns: 1fr; }
+    textarea { min-height: 16rem; }
+  }
+</style>

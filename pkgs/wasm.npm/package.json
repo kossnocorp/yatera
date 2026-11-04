@@ -1,0 +1,21 @@
+{
+  "name": "@yatera.fyi/wasm",
+  "type": "module",
+  "description": "Yatera template rendering for WebAssembly",
+  "version": "0.3.0",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kossnocorp/yatera"
+  },
+  "files": [
+    "index_bg.wasm",
+    "index.js",
+    "index.d.ts"
+  ],
+  "main": "index.js",
+  "types": "index.d.ts",
+  "sideEffects": [
+    "./snippets/*"
+  ]
+}

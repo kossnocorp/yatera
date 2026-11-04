@@ -145,6 +145,74 @@ cat template.tera | tera --json-env VARS
 | `--toml-env VARS` | TOML   |
 | `--yaml-env VARS` | YAML   |
 
+## Lua Plugins
+
+Load Lua plugins in order with repeatable `--plugin` flags:
+
+```sh
+tera --in-file template.tera --json-file vars.json \
+  --plugin ./path/to/plugin1.lua --plugin ./path/to/plugin2.lua
+```
+
+Plugins register filters, functions, and tests by assigning functions to the
+`yatera` tables:
+
+```lua
+-- {{ name | greet(prefix="Hi") }}
+yatera.filters.greet = function(value, args)
+  return (args.prefix or "Hello") .. ", " .. value .. "!"
+end
+
+-- {{ project_names() }}
+yatera.functions.project_names = function(args)
+  local names = ""
+  for i, name in ipairs(yatera.get("projects") or {}) do
+    if i > 1 then names = names .. ", " end
+    names = names .. string.upper(name)
+  end
+  return names
+end
+
+-- {% if name is long(min=3) %}...{% endif %}
+yatera.tests.long = function(value, args)
+  return #value >= (args.min or 3)
+end
+```
+
+### Runtime API
+
+- `yatera.filters.NAME(value, args)`: receives the filtered value and named arguments.
+- `yatera.functions.NAME(args)`: receives named arguments.
+- `yatera.tests.NAME(value, args)`: receives the tested value and named arguments;
+  must return a boolean.
+- `yatera.get("name")`: reads an original render-input variable, or `nil` if absent.
+  This includes CLI variable overrides, but not Tera loop variables or `{% set %}`
+  assignments. Pass those as filter values or named arguments instead.
+- `yatera.null`: represents an explicit JSON null, including within arrays/objects.
+- Lua helpers include `pairs`, `ipairs`, `tostring`, `tonumber`, `assert`, `error`,
+  and the runtime's `string`, `table`, and `math` libraries.
+
+Yatera embeds [Piccolo](https://github.com/kyren/piccolo), a pure-Rust Lua runtime,
+on both native and WebAssembly targets. Its core standard library is available;
+it is not a complete implementation of every PUC Lua standard-library function.
+File/process APIs and external module loading are not provided.
+
+Objects become string-keyed Lua tables; arrays become 1-based tables; scalars keep
+their types. Input arrays preserve their array identity, including empty arrays.
+Returned consecutive integer-keyed tables become arrays, and string-keyed tables
+become objects (an untagged empty `{}` is an object). Return `nil` or `yatera.null`
+for null. Cycles, mixed/sparse table keys, non-finite numbers, and unsupported return
+types produce render errors. Integers must fit Lua's signed 64-bit range.
+
+Each render starts a fresh runtime. Plugins share globals within that render and
+are evaluated in the order supplied; later definitions replace earlier ones,
+including same-named built-ins. Top-level code and each callback have an execution
+budget so runaway Lua loops produce errors. Syntax/runtime errors fail the render
+without writing partial CLI output.
+
+The [playground](https://yatera.fyi/playground) has a **Lua plugin** tab in the Input
+pane. Its example is placeholder text only; enter code to activate a plugin.
+
 ## Built-Ins
 
 Yatera supports all default [Tera built-ins](https://keats.github.io/tera/#built-ins) as well as extra filters.
@@ -192,6 +260,20 @@ For an existing `yatera::Context`, use:
 ```rs
 yatera::render_with_context(template, &context)
 ```
+
+Pass Lua source code as `Vec<String>` with `render_with_plugins`:
+
+```rust
+let plugins = vec![r#"
+    yatera.filters.shout = function(value, args)
+        return string.upper(value) .. "!"
+    end
+"#.to_owned()];
+let output = yatera::render_with_plugins("{{ name | shout }}", &vars, plugins)?;
+```
+
+For an existing context, use
+`yatera::render_with_context_and_plugins(template, &context, plugins)`.
 
 ## License
 
