@@ -3,6 +3,49 @@ use std::collections::HashMap;
 use yatera::render_with_plugins;
 
 #[test]
+fn named_function_arguments_and_return_types() {
+    let plugin = r#"
+        yatera.functions.exec = function(args)
+            assert(type(args) == "table")
+            assert(args.command == "asd")
+            assert(args.timeout == 5000)
+            return "qwe"
+        end
+        yatera.functions.empty = function(args)
+            assert(type(args) == "table")
+            assert(next(args) == nil)
+            return "test"
+        end
+        yatera.functions.echo = function(args) return args.value end
+    "#;
+    assert_eq!(
+        render(
+            r#"{{ exec(command="asd", timeout=5000) }}|{{ empty() }}"#,
+            &[plugin],
+        )
+        .unwrap(),
+        "qwe|test"
+    );
+    for value in [
+        json!("text"),
+        json!(42),
+        json!(1.5),
+        json!(false),
+        json!(null),
+        json!([1, null, "three"]),
+        json!({"nested": {"value": true}, "empty": []}),
+    ] {
+        let output = render_with_plugins(
+            "{% set result = echo(value=value) %}{{ result == value }}",
+            &HashMap::from([("value".to_owned(), value)]),
+            vec![plugin.to_owned()],
+        )
+        .unwrap();
+        assert_eq!(output, "true");
+    }
+}
+
+#[test]
 fn merges_plugin_context_with_input_in_order() {
     let mut context = yatera::Context::new();
     context.insert("home", "/home/test");
